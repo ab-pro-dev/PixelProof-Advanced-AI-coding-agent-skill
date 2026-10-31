@@ -1,7 +1,8 @@
-"""PixelProof image comparison and visual artifact generation package."""
+"""PixelProof image comparison and reporting package."""
 
 from pixelproof_image.compare import ImageLoadError, ImageSize, compare_images, load_image
 from pixelproof_image.overlay import make_diff, make_overlay, make_side_by_side
+from pixelproof_image.report import run_comparison
 
 __all__ = [
     "ImageLoadError",
@@ -11,4 +12,5 @@ __all__ = [
     "make_diff",
     "make_overlay",
     "make_side_by_side",
+    "run_comparison",
 ]
