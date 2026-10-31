@@ -32,6 +32,28 @@ export type WaitUntilStrategy = "load" | "domcontentloaded" | "networkidle";
 export type ColorScheme = "light" | "dark" | "no-preference";
 export type ReducedMotion = "reduce" | "no-preference";
 
+export type BrowserLauncher = (options?: Parameters<typeof chromium.launch>[0]) => Promise<Browser>;
+
+// AGENT PROPOSAL: Browser launcher injection for tests without changing production behavior.
+// Must NOT be exposed through captureFromManifest options or any future CLI flag.
+let defaultBrowserLauncher: BrowserLauncher = (launchOptions) => chromium.launch(launchOptions);
+
+/**
+ * Set the default browser launcher (used for test isolation).
+ * AGENT PROPOSAL: Test hook only. Must NOT be exposed through captureFromManifest options or CLI flags.
+ */
+export function setDefaultBrowserLauncher(launcher: BrowserLauncher): void {
+  defaultBrowserLauncher = launcher;
+}
+
+/**
+ * Reset the default browser launcher to Playwright's chromium.launch.
+ * AGENT PROPOSAL: Test hook only.
+ */
+export function resetDefaultBrowserLauncher(): void {
+  defaultBrowserLauncher = (launchOptions) => chromium.launch(launchOptions);
+}
+
 export interface Viewport {
   width: number;
   height: number;
@@ -53,6 +75,12 @@ export interface CaptureOptions {
   timezoneId?: string; // default "UTC" (AGENT PROPOSAL)
   colorScheme?: ColorScheme; // default "light" (AGENT PROPOSAL)
   reducedMotion?: ReducedMotion; // default "reduce" (AGENT PROPOSAL)
+  /**
+   * Optional internal launcher hook for testing (default: Playwright's chromium.launch).
+   * AGENT PROPOSAL: Internal test injection only. Must NOT be exposed through
+   * captureFromManifest options or any future CLI flag.
+   */
+  launcher?: BrowserLauncher;
 }
 
 export interface CaptureSuccess {
@@ -67,7 +95,6 @@ export interface CaptureSuccess {
   platform: string;
   readyAfterMs: number;
   waitUntil: WaitUntilStrategy;
-  effectiveWaitUntil: WaitUntilStrategy;
 }
 
 export interface CaptureFailure {
@@ -182,6 +209,7 @@ export async function captureUrl(options: CaptureOptions): Promise<CaptureResult
   }
 
   // 4. Launch browser and set up context with deterministic defaults
+  const launchBrowser = options.launcher ?? defaultBrowserLauncher;
   const deviceScaleFactor = options.deviceScaleFactor ?? 1;
   const timeoutMs = options.timeoutMs ?? 30000;
   const waitForFonts = options.waitForFonts !== false; // default true
@@ -194,7 +222,7 @@ export async function captureUrl(options: CaptureOptions): Promise<CaptureResult
   let browser: Browser | null = null;
 
   try {
-    browser = await chromium.launch({
+    browser = await launchBrowser({
       headless: true,
     });
 
@@ -327,7 +355,6 @@ export async function captureUrl(options: CaptureOptions): Promise<CaptureResult
       platform,
       readyAfterMs,
       waitUntil,
-      effectiveWaitUntil: waitUntil,
     };
   } catch (err: any) {
     const isTimeout =

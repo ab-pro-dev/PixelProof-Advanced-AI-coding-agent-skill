@@ -5,6 +5,12 @@ import * as os from "node:os";
 import * as path from "node:path";
 import test, { after, before, describe } from "node:test";
 import { captureFromManifest } from "../src/browser/capture-manifest.js";
+import {
+  setDefaultBrowserLauncher,
+  resetDefaultBrowserLauncher,
+  type BrowserLauncher,
+} from "../src/browser/capture.js";
+import { chromium } from "playwright";
 
 /**
  * Extract PNG dimensions from the 24-byte IHDR header without external dependencies.
@@ -277,7 +283,8 @@ describe("captureFromManifest", () => {
     assert.strictEqual(result.status, "failed");
     assert.strictEqual(result.error.code, "manifest_invalid");
     assert(Array.isArray((result as any).errors));
-    assert(!fs.existsSync(path.join(outDir, "final")));
+    assert((result as any).errors.length > 0);
+    assert(!fs.existsSync(outDir) || fs.readdirSync(outDir).length === 0);
   });
 
   test("missing baseUrl everywhere returns base_url_missing", async () => {
@@ -350,22 +357,31 @@ describe("captureFromManifest", () => {
     fs.writeFileSync(manifestPath, JSON.stringify(manifestData, null, 2), "utf-8");
 
     const outDir = path.join(tmpDir, "out_ext");
-    const start = performance.now();
-    const result = await captureFromManifest({
-      manifestPath,
-      outputDir: outDir,
-    });
-    const duration = performance.now() - start;
+    let launchCount = 0;
+    const spyLauncher: BrowserLauncher = async (opts) => {
+      launchCount++;
+      return chromium.launch(opts);
+    };
 
-    assert.strictEqual(result.status, "completed");
-    if (result.status === "completed") {
-      assert.strictEqual(result.total, 1);
-      assert.strictEqual(result.captured, 0);
-      assert.strictEqual(result.failed, 1);
-      assert.strictEqual(result.results[0].status, "failed");
-      assert.strictEqual(result.results[0].error?.code, "url_not_allowed");
-      assert(duration < 500, `Expected fast return without browser launch, took ${duration}ms`);
-      assert(!fs.existsSync(path.join(outDir, "final", "landing.png")));
+    setDefaultBrowserLauncher(spyLauncher);
+    try {
+      const result = await captureFromManifest({
+        manifestPath,
+        outputDir: outDir,
+      });
+
+      assert.strictEqual(result.status, "completed");
+      if (result.status === "completed") {
+        assert.strictEqual(result.total, 1);
+        assert.strictEqual(result.captured, 0);
+        assert.strictEqual(result.failed, 1);
+        assert.strictEqual(result.results[0].status, "failed");
+        assert.strictEqual(result.results[0].error?.code, "url_not_allowed");
+        assert.strictEqual(launchCount, 0);
+        assert(!fs.existsSync(path.join(outDir, "final", "landing.png")));
+      }
+    } finally {
+      resetDefaultBrowserLauncher();
     }
   });
 

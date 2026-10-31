@@ -5,7 +5,8 @@ import * as http from "node:http";
 import * as os from "node:os";
 import * as path from "node:path";
 import test, { after, before, describe } from "node:test";
-import { captureUrl } from "../src/browser/capture.js";
+import { captureUrl, type BrowserLauncher } from "../src/browser/capture.js";
+import { chromium } from "playwright";
 
 /**
  * Extract PNG dimensions from the 24-byte IHDR header without external dependencies.
@@ -180,35 +181,47 @@ describe("Browser capture (Playwright)", () => {
 
   test("https://example.com returns url_not_allowed without launching browser", async () => {
     const outPath = path.join(tmpDir, "example_com.png");
-    const start = performance.now();
+    let launchCount = 0;
+    const spyLauncher: BrowserLauncher = async (opts) => {
+      launchCount++;
+      return chromium.launch(opts);
+    };
+
     const result = await captureUrl({
       url: "https://example.com",
       outputPath: outPath,
       viewport: { width: 100, height: 100 },
+      launcher: spyLauncher,
     });
-    const elapsedMs = performance.now() - start;
 
     assert.strictEqual(result.status, "failed");
     assert.strictEqual(result.error.code, "url_not_allowed");
     assert.match(result.error.message, /Host 'example\.com' is not allowed by default/);
     assert(!fs.existsSync(outPath));
-    // Proves rejection happened immediately without spawning a browser process
-    assert(elapsedMs < 200, `Expected fast return before browser launch, took ${elapsedMs}ms`);
+    assert.strictEqual(launchCount, 0);
   });
 
   test("file:///etc/passwd returns url_not_allowed even with allowExternal:true", async () => {
     const outPath = path.join(tmpDir, "file_passwd.png");
+    let launchCount = 0;
+    const spyLauncher: BrowserLauncher = async (opts) => {
+      launchCount++;
+      return chromium.launch(opts);
+    };
+
     const result = await captureUrl({
       url: "file:///etc/passwd",
       outputPath: outPath,
       viewport: { width: 100, height: 100 },
       allowExternal: true,
+      launcher: spyLauncher,
     });
 
     assert.strictEqual(result.status, "failed");
     assert.strictEqual(result.error.code, "url_not_allowed");
     assert.match(result.error.message, /Scheme 'file:' is not allowed/);
     assert(!fs.existsSync(outPath));
+    assert.strictEqual(launchCount, 0);
   });
 
   test("existing output without overwrite returns output_exists and preserves file", async () => {
@@ -270,7 +283,6 @@ describe("Browser capture (Playwright)", () => {
     assert(result.readyAfterMs >= 250, `Expected readyAfterMs >= 250, got ${result.readyAfterMs}`);
     assert(typeof result.browserVersion === "string" && result.browserVersion.length > 0);
     assert.strictEqual(result.platform, process.platform);
-    assert.strictEqual(result.effectiveWaitUntil, "load");
     assert.strictEqual(result.waitUntil, "load");
     assert(fs.existsSync(outPath));
   });
@@ -303,25 +315,49 @@ describe("Browser capture (Playwright)", () => {
       waitUntil: "networkidle",
     });
     assert.strictEqual(resIdle.status, "captured");
-    assert.strictEqual(resIdle.effectiveWaitUntil, "networkidle");
     assert.strictEqual(resIdle.waitUntil, "networkidle");
     assert(fs.existsSync(outIdle));
 
     // 2. Invalid waitUntil fails before launching browser with invalid_option
     const outInvalid = path.join(tmpDir, "invalid_wait.png");
-    const start = performance.now();
+    let launchCount = 0;
+    const spyLauncher: BrowserLauncher = async (opts) => {
+      launchCount++;
+      return chromium.launch(opts);
+    };
+
     const resInvalid = await captureUrl({
       url: `${baseUrl}/`,
       outputPath: outInvalid,
       viewport: { width: 200, height: 150 },
       waitUntil: "invalid_strategy" as any,
+      launcher: spyLauncher,
     });
-    const elapsed = performance.now() - start;
 
     assert.strictEqual(resInvalid.status, "failed");
     assert.strictEqual(resInvalid.error.code, "invalid_option");
     assert.match(resInvalid.error.message, /Invalid waitUntil option: 'invalid_strategy'/);
     assert(!fs.existsSync(outInvalid));
-    assert(elapsed < 200, `Expected fast return before browser launch, took ${elapsed}ms`);
+    assert.strictEqual(launchCount, 0);
+  });
+
+  test("positive control: normal localhost capture with spy launcher gives launchCount === 1", async () => {
+    const outPath = path.join(tmpDir, "positive_control.png");
+    let launchCount = 0;
+    const spyLauncher: BrowserLauncher = async (opts) => {
+      launchCount++;
+      return chromium.launch(opts);
+    };
+
+    const result = await captureUrl({
+      url: `${baseUrl}/`,
+      outputPath: outPath,
+      viewport: { width: 200, height: 150 },
+      launcher: spyLauncher,
+    });
+
+    assert.strictEqual(result.status, "captured");
+    assert.strictEqual(launchCount, 1);
+    assert(fs.existsSync(outPath));
   });
 });
