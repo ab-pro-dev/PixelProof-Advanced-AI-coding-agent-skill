@@ -42,6 +42,7 @@ Copied faithfully from §19 of the project documentation:
   - Track improvements between iterations.
   - Detect stalled progress and regressions.
   - Improve the agent's instructions for root-cause fixes.
+  - AGENT PROPOSAL: reports should state plainly when references compared but still differ (tool success is not visual quality, §15)
 - **Completion condition:** The agent can use comparison evidence to improve an implementation across repeated iterations and accurately report remaining problems.
 
 ### Phase 4: Production
@@ -113,4 +114,4 @@ The following ambiguities were flagged in Appendix A of the project documentatio
 | Q6 | §15 | The source rendering showed "4 of 8 checked" without saying which items. Which, if any, are already complete? (All are shown unchecked here.) | None are complete yet; all 8 checklist items are acceptance targets, not claims of current completion per §15 |
 | Q7 | §2, §22, §23 | Items are phrased as personal recommendations ("I recommend", "My recommendation") while §22 is titled "Final recommended technology choices". Should these be treated as final decisions? | NONE, ask owner |
 | Q8 | §7.6, §8.1, §8.4, §12 | Several parameters are undefined: the severity scale (for example what "high" means), factors S, V, and R in the priority score, and what counts as "improvement stalls" or "negligible improvement". The source says to define and calibrate these during implementation. | Use default `MAX_ITERATIONS = 5` per §8.1; calibrate thresholds, priority factors ($P = A \times S \times V \times R$), and stall criteria during implementation per §7.6 and §12; specific scales and threshold values: NONE, ask owner |
-| Q9 | §11 | What does `pixelproof run` execute itself, and what does it delegate to the agent ("with agent guidance")? | CLI automates inspection, capture, comparison, and reporting; AI coding agent is responsible for design understanding and editing application code per §11 |
+| Q9 | §11 | What does `pixelproof run` execute itself, and what does it delegate to the agent ("with agent guidance")? | NONE, ask owner |
