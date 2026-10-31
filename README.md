@@ -8,11 +8,19 @@ Phase 1 complete except Phase 2+ features.
 
 The Phase 1 visual comparison engine, read-only project inspector, manifest validator, and report generator are implemented in Python. Features planned for subsequent phases—including browser automation with Playwright (`capture`), perceptual SSIM, region-based comparison, automated issue ranking, and the autonomous multi-iteration refinement loop (`run`)—are NOT BUILT YET (Phase 2/3).
 
+## Run the Demo
+
+Run the end-to-end Phase 1 demonstration pipeline with a single command:
+
+```bash
+python scripts/demo_phase1.py
+```
+
 ## Testing
 
 Run the automated test suite:
 
-- Python test suite (63 unit & CLI tests):
+- Python test suite (64 unit & CLI tests):
   ```bash
   pytest -q
   ```
