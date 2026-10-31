@@ -1,13 +1,14 @@
-"""PixelProof image comparison and manifest validation CLI.
+"""PixelProof image comparison, manifest validation, and project inspection CLI.
 
 Invocations:
     python -m pixelproof_image.cli compare --id ID --reference PATH --actual PATH --out DIR [--overwrite]
     python -m pixelproof_image.cli validate --manifest PATH
+    python -m pixelproof_image.cli inspect --project DIR
 
 Notes:
-- Exit codes (0 for status 'compared' / 'valid', 1 for 'failed' / 'invalid') are an AGENT PROPOSAL
+- Exit codes (0 for status 'compared' / 'valid' / 'inspected', 1 for 'failed' / 'invalid') are an AGENT PROPOSAL
   pending resolution of open question Q2 (how Phase 1 tools are invoked before the TypeScript CLI exists).
-- Reference manifest format in §6 is PROPOSED, and statuses/error codes are AGENT PROPOSALS (Q5).
+- Statuses and field names are AGENT PROPOSALS (Q5).
 - Never prints anything except JSON on stdout.
 """
 
@@ -17,15 +18,16 @@ import argparse
 import json
 import sys
 
+from pixelproof_image.inspect_project import inspect_project
 from pixelproof_image.manifest import validate_manifest
 from pixelproof_image.report import run_comparison
 
 
 def main(argv: list[str] | None = None) -> None:
-    """CLI entry point for PixelProof image comparison and manifest validation."""
+    """CLI entry point for PixelProof image comparison, manifest validation, and project inspection."""
     parser = argparse.ArgumentParser(
         prog="pixelproof_image.cli",
-        description="PixelProof image comparison and manifest validation tool.",
+        description="PixelProof image comparison, manifest validation, and project inspection tool.",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -74,6 +76,18 @@ def main(argv: list[str] | None = None) -> None:
         help="Path to reference manifest JSON file.",
     )
 
+    # 3. Inspect subcommand
+    inspect_parser = subparsers.add_parser(
+        "inspect",
+        help="Inspect a target frontend project and output a JSON report.",
+    )
+    inspect_parser.add_argument(
+        "--project",
+        required=True,
+        dest="project_dir",
+        help="Path to project directory to inspect.",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "compare":
@@ -90,6 +104,10 @@ def main(argv: list[str] | None = None) -> None:
         report = validate_manifest(args.manifest)
         sys.stdout.write(json.dumps(report, indent=2) + "\n")
         sys.exit(0 if report.get("status") == "valid" else 1)
+    elif args.command == "inspect":
+        report = inspect_project(args.project_dir)
+        sys.stdout.write(json.dumps(report, indent=2) + "\n")
+        sys.exit(0 if report.get("status") == "inspected" else 1)
 
 
 if __name__ == "__main__":
