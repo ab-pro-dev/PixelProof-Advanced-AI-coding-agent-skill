@@ -418,6 +418,8 @@ def test_cli_report_output_exists_and_overwrite(tmp_path: Path):
     data2 = json.loads(proc2.stdout)
     assert data2["status"] == "failed"
     assert data2["error"]["code"] == "output_exists"
+    assert "--overwrite" in data2["error"]["message"]
+    assert "overwrite=True" not in data2["error"]["message"]
 
     # Third write with --overwrite: exit 0
     proc3 = subprocess.run(cmd + ["--overwrite"], capture_output=True, text=True, check=False)

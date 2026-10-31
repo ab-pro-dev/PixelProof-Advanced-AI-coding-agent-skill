@@ -172,7 +172,7 @@ def main(argv: list[str] | None = None) -> None:
                 "status": "failed",
                 "error": {
                     "code": "output_exists",
-                    "message": str(e),
+                    "message": str(e).replace("overwrite=True", "--overwrite"),
                 },
             }
             sys.stdout.write(json.dumps(err_res, indent=2) + "\n")
