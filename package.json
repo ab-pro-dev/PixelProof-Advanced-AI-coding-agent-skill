@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "node --test dist/tests/**/*.test.js"
+    "test": "node --import \"data:text/javascript,process.env.NODE_ENV='test'\" --test dist/tests/**/*.test.js"
   },
   "devDependencies": {
     "@types/node": "^22.13.0",

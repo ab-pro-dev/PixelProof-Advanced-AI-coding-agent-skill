@@ -7,8 +7,8 @@
  *   and CLI flag names are AGENT PROPOSALS pending open questions Q2 and Q5.
  * - Adheres to spec §11 CLI requirements: clear help, predictable exit codes, actionable errors,
  *   JSON output on stdout for agents, explicit project/config options, and no silent overwriting.
- * - Bridges Phase 1 tools (validate, inspect) to the Python CLI via execFile (no shell) while
- *   preserving byte-identical stdout JSON per spec §2.
+ * - Bridges Phase 1 tools (validate, inspect, compare, report) to the Python CLI via execFile (no shell)
+ *   while preserving byte-identical stdout JSON per spec §2.
  * - SECURITY: Connect-only, localhost-only default. External URLs and sandbox bypasses are prohibited.
  *   Environment variables and secrets are never logged.
  */
@@ -42,6 +42,8 @@ Available Commands:
   validate   Validate a reference manifest file
   inspect    Inspect a frontend project directory in read-only mode
   capture    Capture screenshots for all references registered in a manifest
+  compare    Compare reference and actual images and output comparison artifacts
+  report     Build and write final report files (JSON and Markdown)
 
 Options:
   --help, -h Show help for pixelproof
@@ -79,6 +81,44 @@ Required flags:
 Options:
   --python <cmd>   Python executable command or path (default: python)
   --help, -h       Show help for inspect command
+`);
+  process.exit(0);
+}
+
+function printCompareHelp(): void {
+  console.log(`Compare reference and actual images and output comparison artifacts.
+
+Usage:
+  pixelproof compare --id <id> --reference <path> --actual <path> --out <dir> [options]
+
+Required flags:
+  --id <id>           Reference identifier ([A-Za-z0-9_-], max 64 chars)
+  --reference <path>  Path to reference image
+  --actual <path>     Path to actual rendered image
+  --out <dir>         Output directory for comparison artifacts
+
+Options:
+  --overwrite         Overwrite existing comparison artifacts
+  --python <cmd>      Python executable command or path (default: python)
+  --help, -h          Show help for compare command
+`);
+  process.exit(0);
+}
+
+function printReportHelp(): void {
+  console.log(`Build and write final report files (JSON and Markdown) under output directory.
+
+Usage:
+  pixelproof report --summary <path> --out <dir> [options]
+
+Required flags:
+  --summary <path>  Path to run summary JSON file
+  --out <dir>       Base directory under which reports/ will be created
+
+Options:
+  --overwrite       Overwrite existing report files
+  --python <cmd>    Python executable command or path (default: python)
+  --help, -h        Show help for report command
 `);
   process.exit(0);
 }
@@ -210,6 +250,156 @@ async function runInspect(args: string[]): Promise<void> {
   process.exit(res.exitCode);
 }
 
+const COMPARE_OPTIONS = {
+  help: { type: "boolean", short: "h" },
+  id: { type: "string" },
+  reference: { type: "string" },
+  actual: { type: "string" },
+  out: { type: "string" },
+  overwrite: { type: "boolean" },
+  python: { type: "string" },
+} as const;
+
+async function runCompare(args: string[]): Promise<void> {
+  let values: {
+    help?: boolean;
+    id?: string;
+    reference?: string;
+    actual?: string;
+    out?: string;
+    overwrite?: boolean;
+    python?: string;
+  };
+  let positionals: string[];
+
+  try {
+    const parsed = parseArgs({
+      args,
+      options: COMPARE_OPTIONS,
+      allowPositionals: true,
+      strict: true,
+    });
+    values = parsed.values;
+    positionals = parsed.positionals;
+  } catch (err: any) {
+    printUsageError(err?.message ?? String(err));
+  }
+
+  if (values.help) {
+    printCompareHelp();
+  }
+
+  if (positionals.length > 0) {
+    printUsageError(`Unexpected positional argument(s): ${positionals.join(", ")}`);
+  }
+
+  if (!values.id || values.id.trim().length === 0) {
+    printUsageError("Missing required flag: --id");
+  }
+  if (!values.reference || values.reference.trim().length === 0) {
+    printUsageError("Missing required flag: --reference");
+  }
+  if (!values.actual || values.actual.trim().length === 0) {
+    printUsageError("Missing required flag: --actual");
+  }
+  if (!values.out || values.out.trim().length === 0) {
+    printUsageError("Missing required flag: --out");
+  }
+
+  const cliArgs = [
+    "compare",
+    "--id",
+    values.id,
+    "--reference",
+    values.reference,
+    "--actual",
+    values.actual,
+    "--out",
+    values.out,
+  ];
+  if (values.overwrite) {
+    cliArgs.push("--overwrite");
+  }
+
+  const res = await runPythonCli(cliArgs, {
+    pythonCommand: values.python,
+    unavailableCode: "compare_unavailable",
+  });
+
+  if (res.status === "failed") {
+    console.log(JSON.stringify({ status: "failed", error: res.error }, null, 2));
+    process.exit(1);
+  }
+
+  process.stdout.write(res.stdout);
+  process.exit(res.exitCode);
+}
+
+const REPORT_OPTIONS = {
+  help: { type: "boolean", short: "h" },
+  summary: { type: "string" },
+  out: { type: "string" },
+  overwrite: { type: "boolean" },
+  python: { type: "string" },
+} as const;
+
+async function runReport(args: string[]): Promise<void> {
+  let values: {
+    help?: boolean;
+    summary?: string;
+    out?: string;
+    overwrite?: boolean;
+    python?: string;
+  };
+  let positionals: string[];
+
+  try {
+    const parsed = parseArgs({
+      args,
+      options: REPORT_OPTIONS,
+      allowPositionals: true,
+      strict: true,
+    });
+    values = parsed.values;
+    positionals = parsed.positionals;
+  } catch (err: any) {
+    printUsageError(err?.message ?? String(err));
+  }
+
+  if (values.help) {
+    printReportHelp();
+  }
+
+  if (positionals.length > 0) {
+    printUsageError(`Unexpected positional argument(s): ${positionals.join(", ")}`);
+  }
+
+  if (!values.summary || values.summary.trim().length === 0) {
+    printUsageError("Missing required flag: --summary");
+  }
+  if (!values.out || values.out.trim().length === 0) {
+    printUsageError("Missing required flag: --out");
+  }
+
+  const cliArgs = ["report", "--summary", values.summary, "--out", values.out];
+  if (values.overwrite) {
+    cliArgs.push("--overwrite");
+  }
+
+  const res = await runPythonCli(cliArgs, {
+    pythonCommand: values.python,
+    unavailableCode: "report_unavailable",
+  });
+
+  if (res.status === "failed") {
+    console.log(JSON.stringify({ status: "failed", error: res.error }, null, 2));
+    process.exit(1);
+  }
+
+  process.stdout.write(res.stdout);
+  process.exit(res.exitCode);
+}
+
 const CAPTURE_OPTIONS = {
   help: { type: "boolean", short: "h" },
   manifest: { type: "string" },
@@ -311,7 +501,7 @@ async function main(): Promise<void> {
 
   if (rawArgs.length === 0) {
     printUsageError(
-      "Missing required command. Supported commands: validate, inspect, capture. Use --help for usage."
+      "Missing required command. Supported commands: validate, inspect, capture, compare, report. Use --help for usage."
     );
   }
 
@@ -336,8 +526,18 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (firstArg === "compare") {
+    await runCompare(rawArgs.slice(1));
+    return;
+  }
+
+  if (firstArg === "report") {
+    await runReport(rawArgs.slice(1));
+    return;
+  }
+
   printUsageError(
-    `Unknown command: '${firstArg}'. Supported commands: validate, inspect, capture.`
+    `Unknown command: '${firstArg}'. Supported commands: validate, inspect, capture, compare, report.`
   );
 }
 

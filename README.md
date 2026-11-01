@@ -33,7 +33,7 @@ Run the automated test suite:
 
 ### TypeScript CLI (`pixelproof`)
 
-The TypeScript CLI provides automated manifest validation, project inspection, and browser capture:
+The TypeScript CLI provides automated manifest validation, project inspection, browser capture, visual comparison, and final reporting:
 
 1. **Manifest Validation:**
    ```bash
@@ -53,9 +53,19 @@ The TypeScript CLI provides automated manifest validation, project inspection, a
    ```
    Captures deterministic screenshots for every reference registered in a manifest using Playwright, reporting JSON results to stdout.
 
+4. **Image Comparison & Visual Artifacts:**
+   ```bash
+   pixelproof compare --id ID --reference PATH --actual PATH --out DIR [--overwrite] [--python CMD]
+   ```
+   Computes exact Mean Absolute Error (MAE), counts differing pixels, and generates overlay, diff, and side-by-side visual artifacts.
+
+5. **Final Report Generation:**
+   ```bash
+   pixelproof report --summary PATH --out DIR [--overwrite] [--python CMD]
+   ```
+   Generates machine-readable `report.json` and human-readable `report.md` covering all specification sections.
+
 Planned TypeScript CLI commands:
-- `pixelproof compare`: NOT BUILT YET (TypeScript wrapper; invoke via Python CLI below)
-- `pixelproof report`: NOT BUILT YET (TypeScript wrapper; invoke via Python CLI below)
 - `pixelproof init`: NOT BUILT YET (Phase 4 / spec §11)
 - `pixelproof run`: NOT BUILT YET (Phase 3 / spec §11)
 
