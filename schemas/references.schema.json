@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pixelproof.dev/schemas/references.schema.json",
+  "title": "PixelProof Reference Manifest Schema",
+  "description": "Validation schema for PixelProof references.json manifest files",
+  "$comment": "AGENT PROPOSAL: Proposed manifest format pending open questions Q3 and Q4. Rules this schema cannot express stay Python-only: image file existence, image decoding/format check, dimension matching against actual image, path traversal / symlink escape check, and reference ID uniqueness.",
+  "type": "object",
+  "required": ["version", "references"],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "project": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "baseUrl": {
+          "type": "string",
+          "pattern": "^https?://"
+        }
+      }
+    },
+    "references": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "route", "captureType", "viewport", "image"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,64}$"
+          },
+          "image": {
+            "type": "string",
+            "pattern": "^(?![/\\\\]|[A-Za-z]:).+$"
+          },
+          "route": {
+            "type": "string",
+            "pattern": "^/"
+          },
+          "captureType": {
+            "type": "string",
+            "enum": ["viewport"]
+          },
+          "viewport": {
+            "type": "object",
+            "required": ["width", "height"],
+            "properties": {
+              "width": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "height": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          },
+          "deviceScaleFactor": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

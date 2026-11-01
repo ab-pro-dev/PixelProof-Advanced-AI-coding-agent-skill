@@ -131,4 +131,34 @@ describe("TypeScript CLI wrappers (validate & inspect)", () => {
     ]);
     assert.strictEqual(tsInspectStdout, pyInspectRes.stdout);
   });
+
+  test("stdout from validate wrapper on invalid manifest is byte-identical to Python CLI", async () => {
+    const invalidManifest = path.join(tmpDir, "invalid_version_byte.json");
+    fs.writeFileSync(
+      invalidManifest,
+      JSON.stringify({ version: 99, references: [] }, null, 2),
+      "utf-8"
+    );
+
+    const { stdout: tsValidateStdout, code: tsCode } = await runCli(["validate", "--manifest", invalidManifest]);
+    assert.strictEqual(tsCode, 1);
+
+    let pyStdout = "";
+    let pyCode = 0;
+    try {
+      const res = await execFileAsync("python", [
+        "-m",
+        "pixelproof_image.cli",
+        "validate",
+        "--manifest",
+        invalidManifest,
+      ]);
+      pyStdout = res.stdout;
+    } catch (err: any) {
+      pyStdout = err.stdout;
+      pyCode = err.code;
+    }
+    assert.strictEqual(pyCode, 1);
+    assert.strictEqual(tsValidateStdout, pyStdout);
+  });
 });

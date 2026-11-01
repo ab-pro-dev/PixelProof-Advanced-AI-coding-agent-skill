@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pixelproof.dev/schemas/comparison-report.schema.json",
+  "title": "PixelProof Comparison Report Schema",
+  "description": "Schema for machine-readable run_comparison output per reference",
+  "$comment": "AGENT PROPOSAL: Proposed comparison report schema pending open question Q5. Status enum and field requirements are provisional.",
+  "type": "object",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": [
+        "referenceId",
+        "status",
+        "referenceSize",
+        "actualSize",
+        "metrics",
+        "artifacts",
+        "differingPixels",
+        "issues"
+      ],
+      "properties": {
+        "referenceId": {
+          "type": "string"
+        },
+        "status": {
+          "const": "compared"
+        },
+        "referenceSize": {
+          "type": "object",
+          "required": ["width", "height"],
+          "properties": {
+            "width": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "actualSize": {
+          "type": "object",
+          "required": ["width", "height"],
+          "properties": {
+            "width": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "metrics": {
+          "type": "object",
+          "required": ["mae"],
+          "properties": {
+            "mae": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "artifacts": {
+          "type": "object",
+          "required": ["overlay", "diff", "sideBySide"],
+          "properties": {
+            "overlay": {
+              "type": "string"
+            },
+            "diff": {
+              "type": "string"
+            },
+            "sideBySide": {
+              "type": "string"
+            }
+          }
+        },
+        "differingPixels": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "issues": {
+          "type": "array"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": ["referenceId", "status", "error"],
+      "properties": {
+        "referenceId": {
+          "type": "string"
+        },
+        "status": {
+          "const": "failed"
+        },
+        "error": {
+          "type": "object",
+          "required": ["code", "message"],
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        },
+        "metrics": false,
+        "artifacts": false
+      },
+      "not": {
+        "anyOf": [
+          { "required": ["metrics"] },
+          { "required": ["artifacts"] }
+        ]
+      }
+    }
+  ]
+}

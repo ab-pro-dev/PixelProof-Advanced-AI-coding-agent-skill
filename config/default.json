@@ -1,0 +1,25 @@
+{
+  "maxIterations": 5,
+  "browser": {
+    "engine": "chromium",
+    "timeoutMs": 30000,
+    "waitUntil": "networkidle"
+  },
+  "comparison": {
+    "generateOverlay": true,
+    "generateDiff": true,
+    "calculateMAE": true,
+    "calculateSSIM": false,
+    "thresholds": {
+      "maxHighSeverityIssues": 0
+    }
+  },
+  "workflow": {
+    "preserveExistingChanges": true,
+    "verifyAffectedRoutes": true,
+    "stopWhenImprovementStalls": true
+  },
+  "report": {
+    "format": ["json", "markdown"]
+  }
+}

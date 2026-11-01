@@ -208,6 +208,48 @@ describe("TypeScript CLI wrappers (compare & report)", () => {
     assert.strictEqual(tsStdout, pyRes.stdout);
   });
 
+  test("wrapper stdout byte-identical to Python CLI for compare dimension_mismatch", async () => {
+    const outTs = path.join(tmpDir, "out_byte_mismatch_ts");
+    const outPy = path.join(tmpDir, "out_byte_mismatch_py");
+
+    const { stdout: tsStdout, code: tsCode } = await runCli([
+      "compare",
+      "--id",
+      "byte-mismatch",
+      "--reference",
+      imgIdentical1,
+      "--actual",
+      imgMismatched,
+      "--out",
+      outTs,
+    ]);
+    assert.strictEqual(tsCode, 1);
+
+    let pyStdout = "";
+    let pyCode = 0;
+    try {
+      const res = await execFileAsync("python", [
+        "-m",
+        "pixelproof_image.cli",
+        "compare",
+        "--id",
+        "byte-mismatch",
+        "--reference",
+        imgIdentical1,
+        "--actual",
+        imgMismatched,
+        "--out",
+        outPy,
+      ]);
+      pyStdout = res.stdout;
+    } catch (err: any) {
+      pyStdout = err.stdout;
+      pyCode = err.code;
+    }
+    assert.strictEqual(pyCode, 1);
+    assert.strictEqual(tsStdout, pyStdout);
+  });
+
   test("calling setDefaultBrowserLauncher with NODE_ENV unset throws", () => {
     const prev = process.env.NODE_ENV;
     delete process.env.NODE_ENV;

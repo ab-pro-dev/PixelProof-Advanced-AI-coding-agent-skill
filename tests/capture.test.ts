@@ -8,8 +8,6 @@ import test, { after, before, describe } from "node:test";
 import { captureUrl, type BrowserLauncher } from "../src/browser/capture.js";
 import { chromium } from "playwright";
 
-process.env.NODE_ENV = "test";
-
 /**
  * Extract PNG dimensions from the 24-byte IHDR header without external dependencies.
  */

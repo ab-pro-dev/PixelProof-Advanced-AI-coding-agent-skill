@@ -96,3 +96,12 @@ Phase 1 tools are invoked via the Python CLI (`pixelproof_image.cli`):
    python -m pixelproof_image.cli report --summary PATH --out DIR [--overwrite]
    ```
    Generates machine-readable `report.json` and human-readable `report.md` covering all 10 specification sections and enforcing honest completion reporting.
+
+## Schemas
+
+PixelProof maintains JSON Schema (2020-12) contracts for manifest inputs, comparison outputs, and run configurations:
+
+- `schemas/references.schema.json`: Contract for input reference manifests (`references.json`).
+- `schemas/comparison-report.schema.json`: Contract for visual comparison tool outputs (`compared` and `failed` results).
+- `schemas/config.schema.json`: Contract for run configuration options (validating `config/default.json`; marked NOT BUILT YET pending Phase 3).
+

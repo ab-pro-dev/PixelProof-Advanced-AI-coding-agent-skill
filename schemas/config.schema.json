@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pixelproof.dev/schemas/config.schema.json",
+  "title": "PixelProof Configuration Schema",
+  "description": "Validation schema for PixelProof configuration files (e.g. config/default.json)",
+  "$comment": "AGENT PROPOSAL: Proposed configuration schema pending open questions Q5/Q8. Note: config/default.json is an initial proposal from spec §12; nothing reads this file yet (NOT BUILT YET).",
+  "type": "object",
+  "properties": {
+    "maxIterations": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "browser": {
+      "type": "object",
+      "properties": {
+        "engine": {
+          "type": "string"
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "waitUntil": {
+          "type": "string",
+          "enum": ["load", "domcontentloaded", "networkidle"]
+        }
+      }
+    },
+    "comparison": {
+      "type": "object",
+      "properties": {
+        "generateOverlay": {
+          "type": "boolean"
+        },
+        "generateDiff": {
+          "type": "boolean"
+        },
+        "calculateMAE": {
+          "type": "boolean"
+        },
+        "calculateSSIM": {
+          "type": "boolean"
+        },
+        "thresholds": {
+          "type": "object",
+          "properties": {
+            "maxHighSeverityIssues": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "properties": {
+        "preserveExistingChanges": {
+          "type": "boolean"
+        },
+        "verifyAffectedRoutes": {
+          "type": "boolean"
+        },
+        "stopWhenImprovementStalls": {
+          "type": "boolean"
+        }
+      }
+    },
+    "report": {
+      "type": "object",
+      "properties": {
+        "format": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
