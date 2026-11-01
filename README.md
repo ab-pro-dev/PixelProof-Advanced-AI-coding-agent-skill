@@ -16,6 +16,12 @@ Run the end-to-end Phase 1 demonstration pipeline with a single command:
 python scripts/demo_phase1.py
 ```
 
+Run the end-to-end Phase 2 multi-route browser capture and comparison pipeline:
+
+```bash
+node scripts/demo_phase2.mjs
+```
+
 ## Testing
 
 Run the automated test suite:

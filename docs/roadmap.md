@@ -30,6 +30,7 @@ Copied faithfully from §19 of the project documentation:
   - Add capture validation and failure handling.
   - Create the TypeScript CLI and JSON schemas.
   - Produce comparison artifacts for each reference.
+  - Demo: scripts/demo_phase2.mjs (AGENT PROPOSAL)
 - **Completion condition:** PixelProof can capture and compare multiple routes of a real frontend project automatically.
 
 ### Phase 3: Intelligence
