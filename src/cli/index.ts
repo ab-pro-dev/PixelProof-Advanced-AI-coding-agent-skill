@@ -7,6 +7,8 @@
  *   and CLI flag names are AGENT PROPOSALS pending open questions Q2 and Q5.
  * - Adheres to spec §11 CLI requirements: clear help, predictable exit codes, actionable errors,
  *   JSON output on stdout for agents, explicit project/config options, and no silent overwriting.
+ * - Bridges Phase 1 tools (validate, inspect) to the Python CLI via execFile (no shell) while
+ *   preserving byte-identical stdout JSON per spec §2.
  * - SECURITY: Connect-only, localhost-only default. External URLs and sandbox bypasses are prohibited.
  *   Environment variables and secrets are never logged.
  */
@@ -14,6 +16,7 @@
 import { parseArgs } from "node:util";
 import { captureFromManifest } from "../browser/capture-manifest.js";
 import type { WaitUntilStrategy } from "../browser/capture.js";
+import { runPythonCli } from "../core/manifest.js";
 
 const VALID_WAIT_UNTIL = new Set(["load", "domcontentloaded", "networkidle"]);
 
@@ -36,12 +39,46 @@ Usage:
   pixelproof <command> [options]
 
 Available Commands:
+  validate   Validate a reference manifest file
+  inspect    Inspect a frontend project directory in read-only mode
   capture    Capture screenshots for all references registered in a manifest
 
 Options:
   --help, -h Show help for pixelproof
 
 Use 'pixelproof <command> --help' for more information about a command.
+`);
+  process.exit(0);
+}
+
+function printValidateHelp(): void {
+  console.log(`Validate a reference manifest file against specification requirements.
+
+Usage:
+  pixelproof validate --manifest <path> [options]
+
+Required flags:
+  --manifest <path>  Path to reference manifest JSON file
+
+Options:
+  --python <cmd>     Python executable command or path (default: python)
+  --help, -h         Show help for validate command
+`);
+  process.exit(0);
+}
+
+function printInspectHelp(): void {
+  console.log(`Inspect a frontend project directory in read-only mode.
+
+Usage:
+  pixelproof inspect --project <dir> [options]
+
+Required flags:
+  --project <dir>  Path to target frontend project directory
+
+Options:
+  --python <cmd>   Python executable command or path (default: python)
+  --help, -h       Show help for inspect command
 `);
   process.exit(0);
 }
@@ -65,6 +102,112 @@ Options:
   --help, -h                   Show help for capture command
 `);
   process.exit(0);
+}
+
+const VALIDATE_OPTIONS = {
+  help: { type: "boolean", short: "h" },
+  manifest: { type: "string" },
+  python: { type: "string" },
+} as const;
+
+async function runValidate(args: string[]): Promise<void> {
+  let values: {
+    help?: boolean;
+    manifest?: string;
+    python?: string;
+  };
+  let positionals: string[];
+
+  try {
+    const parsed = parseArgs({
+      args,
+      options: VALIDATE_OPTIONS,
+      allowPositionals: true,
+      strict: true,
+    });
+    values = parsed.values;
+    positionals = parsed.positionals;
+  } catch (err: any) {
+    printUsageError(err?.message ?? String(err));
+  }
+
+  if (values.help) {
+    printValidateHelp();
+  }
+
+  if (positionals.length > 0) {
+    printUsageError(`Unexpected positional argument(s): ${positionals.join(", ")}`);
+  }
+
+  if (!values.manifest || values.manifest.trim().length === 0) {
+    printUsageError("Missing required flag: --manifest");
+  }
+
+  const res = await runPythonCli(["validate", "--manifest", values.manifest], {
+    pythonCommand: values.python,
+    unavailableCode: "validator_unavailable",
+  });
+
+  if (res.status === "failed") {
+    console.log(JSON.stringify({ status: "failed", error: res.error }, null, 2));
+    process.exit(1);
+  }
+
+  process.stdout.write(res.stdout);
+  process.exit(res.exitCode);
+}
+
+const INSPECT_OPTIONS = {
+  help: { type: "boolean", short: "h" },
+  project: { type: "string" },
+  python: { type: "string" },
+} as const;
+
+async function runInspect(args: string[]): Promise<void> {
+  let values: {
+    help?: boolean;
+    project?: string;
+    python?: string;
+  };
+  let positionals: string[];
+
+  try {
+    const parsed = parseArgs({
+      args,
+      options: INSPECT_OPTIONS,
+      allowPositionals: true,
+      strict: true,
+    });
+    values = parsed.values;
+    positionals = parsed.positionals;
+  } catch (err: any) {
+    printUsageError(err?.message ?? String(err));
+  }
+
+  if (values.help) {
+    printInspectHelp();
+  }
+
+  if (positionals.length > 0) {
+    printUsageError(`Unexpected positional argument(s): ${positionals.join(", ")}`);
+  }
+
+  if (!values.project || values.project.trim().length === 0) {
+    printUsageError("Missing required flag: --project");
+  }
+
+  const res = await runPythonCli(["inspect", "--project", values.project], {
+    pythonCommand: values.python,
+    unavailableCode: "inspector_unavailable",
+  });
+
+  if (res.status === "failed") {
+    console.log(JSON.stringify({ status: "failed", error: res.error }, null, 2));
+    process.exit(1);
+  }
+
+  process.stdout.write(res.stdout);
+  process.exit(res.exitCode);
 }
 
 const CAPTURE_OPTIONS = {
@@ -167,7 +310,9 @@ async function main(): Promise<void> {
   const rawArgs = process.argv.slice(2);
 
   if (rawArgs.length === 0) {
-    printUsageError("Missing required command. Supported commands: capture. Use --help for usage.");
+    printUsageError(
+      "Missing required command. Supported commands: validate, inspect, capture. Use --help for usage."
+    );
   }
 
   const firstArg = rawArgs[0];
@@ -176,12 +321,24 @@ async function main(): Promise<void> {
     printRootHelp();
   }
 
+  if (firstArg === "validate") {
+    await runValidate(rawArgs.slice(1));
+    return;
+  }
+
+  if (firstArg === "inspect") {
+    await runInspect(rawArgs.slice(1));
+    return;
+  }
+
   if (firstArg === "capture") {
     await runCapture(rawArgs.slice(1));
     return;
   }
 
-  printUsageError(`Unknown command: '${firstArg}'. Supported commands: capture.`);
+  printUsageError(
+    `Unknown command: '${firstArg}'. Supported commands: validate, inspect, capture.`
+  );
 }
 
 main();

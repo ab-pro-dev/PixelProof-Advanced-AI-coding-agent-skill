@@ -53,6 +53,82 @@ export type ManifestResult =
   | InvalidManifestResult
   | ValidatorUnavailableResult;
 
+export interface PythonCliExecutionResult {
+  status: "success" | "failed";
+  stdout: string;
+  exitCode: number;
+  parsedJson?: any;
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+
+/**
+ * Execute a pixelproof_image.cli subcommand via child_process.execFile (no shell).
+ *
+ * Architecture note:
+ * - Reusable Python CLI invocation bridge (AGENT PROPOSAL, pending Q2).
+ * - Enforces { shell: false }, captures exit code and stdout, and checks for valid JSON.
+ */
+export async function runPythonCli(
+  cliArgs: string[],
+  opts?: {
+    pythonCommand?: string;
+    unavailableCode?: string;
+  }
+): Promise<PythonCliExecutionResult> {
+  const pythonCommand = opts?.pythonCommand ?? "python";
+  const unavailableCode = opts?.unavailableCode ?? "validator_unavailable";
+  let stdout = "";
+  let exitCode = 0;
+
+  try {
+    const res = await execFileAsync(
+      pythonCommand,
+      ["-m", "pixelproof_image.cli", ...cliArgs],
+      { shell: false }
+    );
+    stdout = res.stdout;
+    exitCode = 0;
+  } catch (err: any) {
+    if (typeof err?.stdout === "string" && err.stdout.trim().length > 0) {
+      stdout = err.stdout;
+      exitCode = typeof err.status === "number" ? err.status : (typeof err.code === "number" ? err.code : 1);
+    } else {
+      return {
+        status: "failed",
+        stdout: "",
+        exitCode: 1,
+        error: {
+          code: unavailableCode,
+          message: err?.message ?? String(err),
+        },
+      };
+    }
+  }
+
+  try {
+    const parsed = JSON.parse(stdout);
+    return {
+      status: "success",
+      stdout,
+      exitCode,
+      parsedJson: parsed,
+    };
+  } catch (parseErr: any) {
+    return {
+      status: "failed",
+      stdout,
+      exitCode: 1,
+      error: {
+        code: unavailableCode,
+        message: `Failed to parse Python stdout as JSON: ${parseErr?.message ?? String(parseErr)}`,
+      },
+    };
+  }
+}
+
 /**
  * Load and validate a reference manifest by invoking the Python validate CLI.
  *
@@ -64,40 +140,17 @@ export async function loadManifest(
   manifestPath: string,
   opts?: LoadManifestOptions
 ): Promise<ManifestResult> {
-  const pythonCommand = opts?.pythonCommand ?? "python";
-  let stdout = "";
+  const res = await runPythonCli(["validate", "--manifest", manifestPath], {
+    pythonCommand: opts?.pythonCommand,
+    unavailableCode: "validator_unavailable",
+  });
 
-  try {
-    const res = await execFileAsync(
-      pythonCommand,
-      ["-m", "pixelproof_image.cli", "validate", "--manifest", manifestPath],
-      { shell: false }
-    );
-    stdout = res.stdout;
-  } catch (err: any) {
-    if (typeof err?.stdout === "string" && err.stdout.trim().length > 0) {
-      stdout = err.stdout;
-    } else {
-      return {
-        status: "failed",
-        error: {
-          code: "validator_unavailable",
-          message: err?.message ?? String(err),
-        },
-      };
-    }
-  }
-
-  try {
-    const parsed = JSON.parse(stdout);
-    return parsed;
-  } catch (parseErr: any) {
+  if (res.status === "failed") {
     return {
       status: "failed",
-      error: {
-        code: "validator_unavailable",
-        message: `Failed to parse validator stdout as JSON: ${parseErr?.message ?? String(parseErr)}`,
-      },
+      error: res.error as any,
     };
   }
+
+  return res.parsedJson;
 }

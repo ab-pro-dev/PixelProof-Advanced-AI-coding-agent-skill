@@ -41,8 +41,14 @@ let defaultBrowserLauncher: BrowserLauncher = (launchOptions) => chromium.launch
 /**
  * Set the default browser launcher (used for test isolation).
  * AGENT PROPOSAL: Test hook only. Must NOT be exposed through captureFromManifest options or CLI flags.
+ * Guarded against production execution (NODE_ENV === "production").
  */
 export function setDefaultBrowserLauncher(launcher: BrowserLauncher): void {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "setDefaultBrowserLauncher is restricted to test environments and disabled in production."
+    );
+  }
   defaultBrowserLauncher = launcher;
 }
 

@@ -33,17 +33,31 @@ Run the automated test suite:
 
 ### TypeScript CLI (`pixelproof`)
 
-The TypeScript CLI entry point provides automated browser capture:
+The TypeScript CLI provides automated manifest validation, project inspection, and browser capture:
 
-```bash
-pixelproof capture --manifest PATH --out DIR [--base-url URL] [--overwrite] [--ready-selector SEL] [--wait-until load|domcontentloaded|networkidle] [--python CMD]
-```
-Captures deterministic screenshots for every reference registered in a manifest using Playwright, reporting JSON results to stdout.
+1. **Manifest Validation:**
+   ```bash
+   pixelproof validate --manifest PATH [--python CMD]
+   ```
+   Validates reference manifest schema, viewport dimensions, deviceScaleFactor, and image readability.
 
-Planned commands:
+2. **Project Inspection:**
+   ```bash
+   pixelproof inspect --project DIR [--python CMD]
+   ```
+   Inspects target project framework, package manager, build scripts, styling, assets, and Git status in read-only mode.
+
+3. **Browser Capture:**
+   ```bash
+   pixelproof capture --manifest PATH --out DIR [--base-url URL] [--overwrite] [--ready-selector SEL] [--wait-until load|domcontentloaded|networkidle] [--python CMD]
+   ```
+   Captures deterministic screenshots for every reference registered in a manifest using Playwright, reporting JSON results to stdout.
+
+Planned TypeScript CLI commands:
+- `pixelproof compare`: NOT BUILT YET (TypeScript wrapper; invoke via Python CLI below)
+- `pixelproof report`: NOT BUILT YET (TypeScript wrapper; invoke via Python CLI below)
 - `pixelproof init`: NOT BUILT YET (Phase 4 / spec §11)
 - `pixelproof run`: NOT BUILT YET (Phase 3 / spec §11)
-- Wrapped Phase 1 tools (`pixelproof validate`, `pixelproof compare`, `pixelproof inspect`, `pixelproof report`): NOT BUILT YET in the TypeScript CLI; invoke via Python CLI below.
 
 ### Python CLI (`pixelproof_image.cli`)
 
