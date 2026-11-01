@@ -31,6 +31,22 @@ Run the automated test suite:
 
 ## Available CLI Commands
 
+### TypeScript CLI (`pixelproof`)
+
+The TypeScript CLI entry point provides automated browser capture:
+
+```bash
+pixelproof capture --manifest PATH --out DIR [--base-url URL] [--overwrite] [--ready-selector SEL] [--wait-until load|domcontentloaded|networkidle] [--python CMD]
+```
+Captures deterministic screenshots for every reference registered in a manifest using Playwright, reporting JSON results to stdout.
+
+Planned commands:
+- `pixelproof init`: NOT BUILT YET (Phase 4 / spec §11)
+- `pixelproof run`: NOT BUILT YET (Phase 3 / spec §11)
+- Wrapped Phase 1 tools (`pixelproof validate`, `pixelproof compare`, `pixelproof inspect`, `pixelproof report`): NOT BUILT YET in the TypeScript CLI; invoke via Python CLI below.
+
+### Python CLI (`pixelproof_image.cli`)
+
 Phase 1 tools are invoked via the Python CLI (`pixelproof_image.cli`):
 
 1. **Manifest Validation:**
