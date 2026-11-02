@@ -217,6 +217,28 @@
                       "weightedScore": {
                         "type": "number",
                         "exclusiveMinimum": 0
+                      },
+                      "priorityScore": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      "factors": {
+                        "type": "object",
+                        "required": ["A", "S", "V", "R"],
+                        "properties": {
+                          "A": {
+                            "type": "number"
+                          },
+                          "S": {
+                            "type": "number"
+                          },
+                          "V": {
+                            "type": "number"
+                          },
+                          "R": {
+                            "type": "null"
+                          }
+                        }
                       }
                     }
                   }

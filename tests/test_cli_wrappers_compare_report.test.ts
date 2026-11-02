@@ -411,7 +411,15 @@ describe("TypeScript CLI wrappers (compare & report)", () => {
     assert(parsed.regions.weighted);
     assert(Array.isArray(parsed.regions.weighted.ranking));
     assert.strictEqual(parsed.regions.weighted.ranking.length, 1);
-    assert.strictEqual(parsed.regions.weighted.ranking[0].weight, 3.0);
+    const item = parsed.regions.weighted.ranking[0];
+    assert.strictEqual(item.weight, 3.0);
+    assert.strictEqual(item.priorityScore, item.weightedScore);
+    assert.deepStrictEqual(item.factors, {
+      A: item.factors.A,
+      S: item.factors.S,
+      V: 3.0,
+      R: null,
+    });
   });
 
   test("wrapper compare with --weights without --regions exits 1 with weights_require_regions", async () => {

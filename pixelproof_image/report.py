@@ -280,6 +280,8 @@ def run_comparison(
                             "index": w["index"],
                             "weight": w["weight"],
                             "weightedScore": w["weightedScore"],
+                            "priorityScore": w["priorityScore"],
+                            "factors": w["factors"],
                         }
                         for rank, w in enumerate(weighted_items, start=1)
                     ]

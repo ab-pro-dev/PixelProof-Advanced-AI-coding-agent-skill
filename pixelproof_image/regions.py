@@ -3,6 +3,16 @@
 AGENT PROPOSAL: Grid layout (uniform integer tiling with remainder absorption)
 and region metric field names ("areaFraction", "diffRatio", "mae") are provisional
 pending resolution of open architectural question Q8 (severity scale, priority factors).
+
+Priority score P:
+    Formula: P = A x S x V x R
+    Factor sources:
+      - A = areaFraction (fraction of total image area covered by the region)
+      - S = diffRatio (mismatch proportion within the region)
+      - V = weight (owner-supplied visual importance, default 1.0)
+      - R = NOT BUILT (component reuse / frequency factor; currently omitted, treated as 1, null in factors output)
+    Heuristic, not an objective measure of design quality (§7.6).
+    In this implementation, P equals weightedScore = areaFraction * diffRatio * weight.
 """
 
 from __future__ import annotations
@@ -355,12 +365,21 @@ def apply_weights(
             r = item["row"]
             c = item["col"]
             w = float(matrix[r][c])
-            score = float(item["areaFraction"] * item["diffRatio"])
+            a = float(item["areaFraction"])
+            s = float(item["diffRatio"])
+            score = float(a * s)
             weighted_score = float(score * w)
             candidates.append({
                 "index": item["index"],
                 "weight": w,
                 "weightedScore": weighted_score,
+                "priorityScore": weighted_score,
+                "factors": {
+                    "A": a,
+                    "S": s,
+                    "V": w,
+                    "R": None,
+                },
             })
 
     # Sort descending by weightedScore, ties broken by lower index
