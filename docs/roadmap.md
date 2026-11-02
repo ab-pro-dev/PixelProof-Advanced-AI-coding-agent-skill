@@ -57,6 +57,7 @@ Copied faithfully from §19 of the project documentation:
 - **Goal:** Make PixelProof portable, safe, and release-ready.
 - **Deliverables:**
   - Phase 4: doctor + install guide + release checklist (AGENT PROPOSAL)
+  - Phase 4: error.hint on all failures (AGENT PROPOSAL)
   - Add agent adapters and installation instructions.
   - Add robust error handling and diagnostic output.
   - Complete unit, integration, regression, and end-to-end tests.

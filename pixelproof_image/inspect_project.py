@@ -17,6 +17,8 @@ from pathlib import Path
 import subprocess
 from typing import Any, Union
 
+from pixelproof_image.hints import make_error
+
 # Common directories to skip when scanning assets and files
 SKIPPED_DIRS = {"node_modules", ".git", "dist", "build", ".next", ".venv"}
 
@@ -74,10 +76,10 @@ def inspect_project(project_dir: Union[str, os.PathLike]) -> dict[str, Any]:
     if not path_obj.exists() or not path_obj.is_dir():
         return {
             "status": "failed",
-            "error": {
-                "code": "not_a_directory",
-                "message": f"Project directory not found or is not a directory: {project_dir}",
-            },
+            "error": make_error(
+                "not_a_directory",
+                f"Project directory not found or is not a directory: {project_dir}",
+            ),
         }
 
     try:
@@ -87,10 +89,10 @@ def inspect_project(project_dir: Union[str, os.PathLike]) -> dict[str, Any]:
     except Exception as e:
         return {
             "status": "failed",
-            "error": {
-                "code": "unreadable",
-                "message": f"Cannot read project directory {project_dir}: {e}",
-            },
+            "error": make_error(
+                "unreadable",
+                f"Cannot read project directory {project_dir}: {e}",
+            ),
         }
 
     uncertainties: list[str] = []

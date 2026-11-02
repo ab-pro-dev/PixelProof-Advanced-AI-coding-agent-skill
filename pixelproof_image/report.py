@@ -19,6 +19,7 @@ import re
 from typing import Any, Union
 
 from pixelproof_image.compare import compare_images, load_image
+from pixelproof_image.hints import make_error
 from pixelproof_image.overlay import make_diff, make_overlay, make_side_by_side
 from pixelproof_image.regions import (
     compute_regions,
@@ -91,13 +92,13 @@ def run_comparison(
         return {
             "referenceId": reference_id,
             "status": "failed",
-            "error": {
-                "code": "invalid_reference_id",
-                "message": (
+            "error": make_error(
+                "invalid_reference_id",
+                (
                     f"Invalid reference ID: {reference_id!r}. Must contain only "
                     "alphanumeric characters, underscores, and hyphens, and be 1 to 64 characters long."
                 ),
-            },
+            ),
         }
 
     # Validate region weights dependency
@@ -105,10 +106,10 @@ def run_comparison(
         return {
             "referenceId": reference_id,
             "status": "failed",
-            "error": {
-                "code": "weights_require_regions",
-                "message": "--weights requires --regions to be enabled.",
-            },
+            "error": make_error(
+                "weights_require_regions",
+                "--weights requires --regions to be enabled.",
+            ),
         }
 
     # Validate grid specification if regions are requested or grid is customized
@@ -120,10 +121,10 @@ def run_comparison(
             return {
                 "referenceId": reference_id,
                 "status": "failed",
-                "error": {
-                    "code": "invalid_grid",
-                    "message": str(err),
-                },
+                "error": make_error(
+                    "invalid_grid",
+                    str(err),
+                ),
             }
 
     # 2. SECURITY (§17): Validate file paths stay inside output_dir
@@ -142,10 +143,10 @@ def run_comparison(
         return {
             "referenceId": reference_id,
             "status": "failed",
-            "error": {
-                "code": "invalid_reference_id",
-                "message": "Artifact path escapes output directory.",
-            },
+            "error": make_error(
+                "invalid_reference_id",
+                "Artifact path escapes output directory.",
+            ),
         }
 
     # 3. Perform comparison (dimensions, pixel differences, MAE)
@@ -154,7 +155,7 @@ def run_comparison(
         fail_report: dict[str, Any] = {
             "referenceId": reference_id,
             "status": "failed",
-            "error": comp_res.get("error", {"code": "unknown_error", "message": "Comparison failed"}),
+            "error": comp_res.get("error", make_error("unknown_error", "Comparison failed")),
         }
         if "referenceSize" in comp_res:
             fail_report["referenceSize"] = comp_res["referenceSize"]
@@ -169,10 +170,10 @@ def run_comparison(
                 return {
                     "referenceId": reference_id,
                     "status": "failed",
-                    "error": {
-                        "code": "output_exists",
-                        "message": f"Output artifact already exists: {target}",
-                    },
+                    "error": make_error(
+                        "output_exists",
+                        f"Output artifact already exists: {target}",
+                    ),
                     "referenceSize": comp_res["referenceSize"],
                     "actualSize": comp_res["actualSize"],
                 }
@@ -185,7 +186,7 @@ def run_comparison(
         overlay_res = make_overlay(reference_path, actual_path, overlay_file, overwrite=overwrite)
         if overlay_res.get("status") != "written":
             raise ArtifactGenerationError(
-                overlay_res.get("error", {"code": "artifact_error", "message": "Failed to create overlay"})
+                overlay_res.get("error", make_error("artifact_error", "Failed to create overlay"))
             )
         if not existed_overlay:
             created_in_this_call.append(overlay_file)
@@ -195,7 +196,7 @@ def run_comparison(
         diff_res = make_diff(reference_path, actual_path, diff_file, overwrite=overwrite)
         if diff_res.get("status") != "written":
             raise ArtifactGenerationError(
-                diff_res.get("error", {"code": "artifact_error", "message": "Failed to create diff"})
+                diff_res.get("error", make_error("artifact_error", "Failed to create diff"))
             )
         if not existed_diff:
             created_in_this_call.append(diff_file)
@@ -205,7 +206,7 @@ def run_comparison(
         sbs_res = make_side_by_side(reference_path, actual_path, sbs_file, overwrite=overwrite)
         if sbs_res.get("status") != "written":
             raise ArtifactGenerationError(
-                sbs_res.get("error", {"code": "artifact_error", "message": "Failed to create side-by-side"})
+                sbs_res.get("error", make_error("artifact_error", "Failed to create side-by-side"))
             )
         if not existed_sbs:
             created_in_this_call.append(sbs_file)
@@ -226,10 +227,10 @@ def run_comparison(
         return {
             "referenceId": reference_id,
             "status": "failed",
-            "error": {
-                "code": "artifact_error",
-                "message": f"Unexpected error generating artifacts: {err}",
-            },
+            "error": make_error(
+                "artifact_error",
+                f"Unexpected error generating artifacts: {err}",
+            ),
             "referenceSize": comp_res["referenceSize"],
             "actualSize": comp_res["actualSize"],
         }
@@ -290,10 +291,10 @@ def run_comparison(
                 return {
                     "referenceId": reference_id,
                     "status": "failed",
-                    "error": {
-                        "code": "weights_grid_mismatch",
-                        "message": str(err),
-                    },
+                    "error": make_error(
+                        "weights_grid_mismatch",
+                        str(err),
+                    ),
                 }
         report["regions"] = regions_doc
 

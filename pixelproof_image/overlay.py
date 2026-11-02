@@ -21,6 +21,7 @@ import numpy as np
 from PIL import Image
 
 from pixelproof_image.compare import ImageLoadError, ImageSize, load_image
+from pixelproof_image.hints import make_error
 
 
 def _prepare_and_validate(
@@ -39,10 +40,7 @@ def _prepare_and_validate(
         return (
             {
                 "status": "failed",
-                "error": {
-                    "code": "output_exists",
-                    "message": f"Output file already exists: {out_path}",
-                },
+                "error": make_error("output_exists", f"Output file already exists: {out_path}"),
             },
             out_path,
             None,
@@ -54,7 +52,7 @@ def _prepare_and_validate(
         ref_arr, ref_size, _ = load_image(reference_path)
     except ImageLoadError as e:
         return (
-            {"status": "failed", "error": {"code": e.code, "message": e.message}},
+            {"status": "failed", "error": make_error(e.code, e.message)},
             out_path,
             None,
             None,
@@ -65,7 +63,7 @@ def _prepare_and_validate(
         act_arr, act_size, _ = load_image(actual_path)
     except ImageLoadError as e:
         return (
-            {"status": "failed", "error": {"code": e.code, "message": e.message}},
+            {"status": "failed", "error": make_error(e.code, e.message)},
             out_path,
             None,
             None,
@@ -76,14 +74,14 @@ def _prepare_and_validate(
         return (
             {
                 "status": "failed",
-                "error": {
-                    "code": "dimension_mismatch",
-                    "message": (
+                "error": make_error(
+                    "dimension_mismatch",
+                    (
                         f"Image dimensions do not match: reference is "
                         f"{ref_size.width}x{ref_size.height}, actual is "
                         f"{act_size.width}x{act_size.height}"
                     ),
-                },
+                ),
                 "referenceSize": {"width": ref_size.width, "height": ref_size.height},
                 "actualSize": {"width": act_size.width, "height": act_size.height},
             },

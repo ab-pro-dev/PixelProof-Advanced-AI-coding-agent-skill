@@ -17,6 +17,7 @@ import { parseArgs } from "node:util";
 import { captureFromManifest } from "../browser/capture-manifest.js";
 import type { WaitUntilStrategy } from "../browser/capture.js";
 import { checkEnvironment, formatHumanReport } from "../core/check-environment.js";
+import { makeError } from "../core/hints.js";
 import { runPythonCli } from "../core/manifest.js";
 
 const VALID_WAIT_UNTIL = new Set(["load", "domcontentloaded", "networkidle"]);
@@ -24,10 +25,7 @@ const VALID_WAIT_UNTIL = new Set(["load", "domcontentloaded", "networkidle"]);
 function printUsageError(message: string): never {
   const errorDoc = {
     status: "failed",
-    error: {
-      code: "usage_error",
-      message,
-    },
+    error: makeError("usage_error", message),
   };
   console.log(JSON.stringify(errorDoc, null, 2));
   process.exit(2);
@@ -741,10 +739,7 @@ async function runCapture(args: string[]): Promise<void> {
       JSON.stringify(
         {
           status: "failed",
-          error: {
-            code: "internal_error",
-            message: err?.message ?? String(err),
-          },
+          error: makeError("internal_error", err?.message ?? String(err)),
         },
         null,
         2

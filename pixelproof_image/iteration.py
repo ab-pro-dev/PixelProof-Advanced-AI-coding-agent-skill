@@ -18,6 +18,8 @@ from pathlib import Path
 import tempfile
 from typing import Any, Union
 
+from pixelproof_image.hints import make_error
+
 
 def record_iteration(
     state_dir: Union[str, os.PathLike],
@@ -57,10 +59,10 @@ def record_iteration(
         except Exception as err:
             return {
                 "status": "failed",
-                "error": {
-                    "code": "state_corrupt",
-                    "message": f"State file {state_file} is corrupt or unparseable: {err}",
-                },
+                "error": make_error(
+                    "state_corrupt",
+                    f"State file {state_file} is corrupt or unparseable: {err}",
+                ),
             }
 
         if (
@@ -70,10 +72,10 @@ def record_iteration(
         ):
             return {
                 "status": "failed",
-                "error": {
-                    "code": "state_corrupt",
-                    "message": f"State file {state_file} has invalid structure or unsupported version",
-                },
+                "error": make_error(
+                    "state_corrupt",
+                    f"State file {state_file} has invalid structure or unsupported version",
+                ),
             }
 
         stored_max = data.get("maxIterations", max_iterations)

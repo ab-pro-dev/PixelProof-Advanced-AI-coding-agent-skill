@@ -27,6 +27,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { chromium, type Browser } from "playwright";
+import { makeError } from "../core/hints.js";
 
 export type WaitUntilStrategy = "load" | "domcontentloaded" | "networkidle";
 export type ColorScheme = "light" | "dark" | "no-preference";
@@ -115,6 +116,7 @@ export interface CaptureFailure {
       | "readiness_timeout"
       | "invalid_option";
     message: string;
+    hint?: string;
   };
   url: string;
 }
@@ -140,10 +142,10 @@ export async function captureUrl(options: CaptureOptions): Promise<CaptureResult
   if (!VALID_WAIT_UNTIL.has(waitUntil)) {
     return {
       status: "failed",
-      error: {
-        code: "invalid_option",
-        message: `Invalid waitUntil option: '${options.waitUntil}'. Allowed values: load, domcontentloaded, networkidle.`,
-      },
+      error: makeError(
+        "invalid_option",
+        `Invalid waitUntil option: '${options.waitUntil}'. Allowed values: load, domcontentloaded, networkidle.`
+      ),
       url: options.url,
     };
   }
@@ -155,10 +157,7 @@ export async function captureUrl(options: CaptureOptions): Promise<CaptureResult
   } catch {
     return {
       status: "failed",
-      error: {
-        code: "url_not_allowed",
-        message: `Invalid URL: ${options.url}`,
-      },
+      error: makeError("url_not_allowed", `Invalid URL: ${options.url}`),
       url: options.url,
     };
   }
@@ -167,10 +166,10 @@ export async function captureUrl(options: CaptureOptions): Promise<CaptureResult
   if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
     return {
       status: "failed",
-      error: {
-        code: "url_not_allowed",
-        message: `Scheme '${parsedUrl.protocol}' is not allowed. Only http: and https: are permitted.`,
-      },
+      error: makeError(
+        "url_not_allowed",
+        `Scheme '${parsedUrl.protocol}' is not allowed. Only http: and https: are permitted.`
+      ),
       url: options.url,
     };
   }
@@ -180,10 +179,10 @@ export async function captureUrl(options: CaptureOptions): Promise<CaptureResult
   if (!isExternalAllowed && !isLocalHostname(parsedUrl.hostname)) {
     return {
       status: "failed",
-      error: {
-        code: "url_not_allowed",
-        message: `Host '${parsedUrl.hostname}' is not allowed by default. Only local hosts (localhost, 127.0.0.1, ::1) are permitted unless allowExternal: true is explicitly specified.`,
-      },
+      error: makeError(
+        "url_not_allowed",
+        `Host '${parsedUrl.hostname}' is not allowed by default. Only local hosts (localhost, 127.0.0.1, ::1) are permitted unless allowExternal: true is explicitly specified.`
+      ),
       url: options.url,
     };
   }
@@ -193,10 +192,10 @@ export async function captureUrl(options: CaptureOptions): Promise<CaptureResult
   if (!options.overwrite && fs.existsSync(resolvedOutPath)) {
     return {
       status: "failed",
-      error: {
-        code: "output_exists",
-        message: `Output file already exists at ${resolvedOutPath}. Use overwrite: true to replace.`,
-      },
+      error: makeError(
+        "output_exists",
+        `Output file already exists at ${resolvedOutPath}. Use overwrite: true to replace.`
+      ),
       url: options.url,
     };
   }
@@ -206,10 +205,10 @@ export async function captureUrl(options: CaptureOptions): Promise<CaptureResult
   } catch (err: any) {
     return {
       status: "failed",
-      error: {
-        code: "write_failed",
-        message: `Failed to create output directory: ${err?.message ?? String(err)}`,
-      },
+      error: makeError(
+        "write_failed",
+        `Failed to create output directory: ${err?.message ?? String(err)}`
+      ),
       url: options.url,
     };
   }
@@ -273,10 +272,10 @@ export async function captureUrl(options: CaptureOptions): Promise<CaptureResult
         (typeof navErr?.message === "string" && navErr.message.includes("Timeout"));
       return {
         status: "failed",
-        error: {
-          code: isTimeout ? "timeout" : "navigation_failed",
-          message: navErr?.message ?? String(navErr),
-        },
+        error: makeError(
+          isTimeout ? "timeout" : "navigation_failed",
+          navErr?.message ?? String(navErr)
+        ),
         url: options.url,
       };
     }
@@ -309,10 +308,10 @@ export async function captureUrl(options: CaptureOptions): Promise<CaptureResult
           (typeof selErr?.message === "string" && selErr.message.includes("Timeout"));
         return {
           status: "failed",
-          error: {
-            code: isTimeout ? "readiness_timeout" : "navigation_failed",
-            message: selErr?.message ?? String(selErr),
-          },
+          error: makeError(
+            isTimeout ? "readiness_timeout" : "navigation_failed",
+            selErr?.message ?? String(selErr)
+          ),
           url: options.url,
         };
       }
@@ -338,10 +337,10 @@ export async function captureUrl(options: CaptureOptions): Promise<CaptureResult
         (typeof shotErr?.message === "string" && shotErr.message.includes("Timeout"));
       return {
         status: "failed",
-        error: {
-          code: isTimeout ? "timeout" : "write_failed",
-          message: shotErr?.message ?? String(shotErr),
-        },
+        error: makeError(
+          isTimeout ? "timeout" : "write_failed",
+          shotErr?.message ?? String(shotErr)
+        ),
         url: options.url,
       };
     }
@@ -368,10 +367,10 @@ export async function captureUrl(options: CaptureOptions): Promise<CaptureResult
       (typeof err?.message === "string" && err.message.includes("Timeout"));
     return {
       status: "failed",
-      error: {
-        code: isTimeout ? "timeout" : "navigation_failed",
-        message: err?.message ?? String(err),
-      },
+      error: makeError(
+        isTimeout ? "timeout" : "navigation_failed",
+        err?.message ?? String(err)
+      ),
       url: options.url,
     };
   } finally {

@@ -17,8 +17,35 @@ from pathlib import Path
 from typing import Any, Union
 
 from pixelproof_image.compare import ImageLoadError, load_image
+from pixelproof_image.hints import hint_for
 from pixelproof_image.regions import validate_region_weights
 from pixelproof_image.report import REFERENCE_ID_PATTERN
+
+
+class ErrorList(list):
+    """List of validation errors that automatically attaches hints to error dicts."""
+
+    def append(self, item: dict[str, Any]) -> None:
+        code = item.get("code")
+        if code and "hint" not in item:
+            h = hint_for(code)
+            if h is not None:
+                item["hint"] = h
+        super().append(item)
+
+    def extend(self, iterable: Any) -> None:
+        for item in iterable:
+            self.append(item)
+
+
+def _attach_hints(errs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    for e in errs:
+        code = e.get("code")
+        if code and "hint" not in e:
+            h = hint_for(code)
+            if h is not None:
+                e["hint"] = h
+    return errs
 
 
 def validate_manifest(manifest_path: Union[str, os.PathLike]) -> dict[str, Any]:
@@ -49,13 +76,13 @@ def validate_manifest(manifest_path: Union[str, os.PathLike]) -> dict[str, Any]:
     if not path_obj.exists() or not path_obj.is_file():
         return {
             "status": "invalid",
-            "errors": [
+            "errors": _attach_hints([
                 {
                     "code": "manifest_missing",
                     "path": "",
                     "message": f"Manifest file not found: {manifest_path}",
                 }
-            ],
+            ]),
         }
 
     try:
@@ -64,28 +91,28 @@ def validate_manifest(manifest_path: Union[str, os.PathLike]) -> dict[str, Any]:
     except Exception as e:
         return {
             "status": "invalid",
-            "errors": [
+            "errors": _attach_hints([
                 {
                     "code": "manifest_unparseable",
                     "path": "",
                     "message": f"Manifest is not valid JSON: {e}",
                 }
-            ],
+            ]),
         }
 
     if not isinstance(data, dict):
         return {
             "status": "invalid",
-            "errors": [
+            "errors": _attach_hints([
                 {
                     "code": "manifest_unparseable",
                     "path": "",
                     "message": "Manifest root must be a JSON object",
                 }
-            ],
+            ]),
         }
 
-    errors: list[dict[str, str]] = []
+    errors: list[dict[str, str]] = ErrorList()
     manifest_dir = path_obj.parent.resolve()
 
     # 1. Version check: must equal 1
@@ -408,7 +435,7 @@ def validate_manifest(manifest_path: Union[str, os.PathLike]) -> dict[str, Any]:
     if errors:
         return {
             "status": "invalid",
-            "errors": errors,
+            "errors": _attach_hints(errors),
         }
 
     return {

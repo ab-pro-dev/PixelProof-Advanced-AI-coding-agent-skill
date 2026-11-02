@@ -18,6 +18,8 @@ from pathlib import Path
 from string import Template
 from typing import Any, Union
 
+from pixelproof_image.hints import make_error
+
 VALID_CHECK_STATES = {"passed", "failed", "skipped", "unavailable"}
 TEMPLATE_PATH = Path(__file__).resolve().parent.parent / "templates" / "report.md"
 
@@ -77,7 +79,7 @@ def build_report(run_summary: dict[str, Any]) -> dict[str, Any]:
 
     for ref in raw_references:
         if not isinstance(ref, dict):
-            ref = {"status": "failed", "error": {"code": "invalid_reference_entry", "message": "Not a dict"}}
+            ref = {"status": "failed", "error": make_error("invalid_reference_entry", "Not a dict")}
 
         ref_entry = dict(ref)
         status = ref_entry.get("status")
@@ -89,7 +91,7 @@ def build_report(run_summary: dict[str, Any]) -> dict[str, Any]:
                 ref_entry["status"] = "failed"
                 ref_entry.setdefault(
                     "error",
-                    {"code": "missing_status", "message": "Reference comparison record missing status"},
+                    make_error("missing_status", "Reference comparison record missing status"),
                 )
             failed_count += 1
 

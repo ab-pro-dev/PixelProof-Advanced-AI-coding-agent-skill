@@ -18,6 +18,8 @@ from typing import NamedTuple, Union
 import numpy as np
 from PIL import Image, ImageFile
 
+from pixelproof_image.hints import make_error
+
 # Ensure truncated images trigger errors rather than partial loading
 ImageFile.LOAD_TRUNCATED_IMAGES = False
 
@@ -125,7 +127,7 @@ def compare_images(
     except ImageLoadError as e:
         return {
             "status": "failed",
-            "error": {"code": e.code, "message": e.message},
+            "error": make_error(e.code, e.message),
         }
 
     try:
@@ -133,7 +135,7 @@ def compare_images(
     except ImageLoadError as e:
         return {
             "status": "failed",
-            "error": {"code": e.code, "message": e.message},
+            "error": make_error(e.code, e.message),
         }
 
     ref_size_dict = {"width": ref_size.width, "height": ref_size.height}
@@ -143,14 +145,14 @@ def compare_images(
     if ref_size != act_size:
         return {
             "status": "failed",
-            "error": {
-                "code": "dimension_mismatch",
-                "message": (
+            "error": make_error(
+                "dimension_mismatch",
+                (
                     f"Image dimensions do not match: reference is "
                     f"{ref_size.width}x{ref_size.height}, actual is "
                     f"{act_size.width}x{act_size.height}"
                 ),
-            },
+            ),
             "referenceSize": ref_size_dict,
             "actualSize": act_size_dict,
         }

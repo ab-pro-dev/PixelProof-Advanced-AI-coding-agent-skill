@@ -11,6 +11,7 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { makeError } from "../core/hints.js";
 import { loadManifest } from "../core/manifest.js";
 import { captureUrl, type Viewport, type WaitUntilStrategy } from "./capture.js";
 
@@ -31,6 +32,7 @@ export interface CaptureReferenceResult {
   error?: {
     code: string;
     message: string;
+    hint?: string;
   };
   viewport: Viewport;
   deviceScaleFactor: number;
@@ -49,11 +51,13 @@ export interface CaptureFromManifestFailed {
   error: {
     code: string;
     message?: string;
+    hint?: string;
   };
   errors?: Array<{
     code: string;
     path: string;
     message: string;
+    hint?: string;
   }>;
 }
 
@@ -93,10 +97,7 @@ export async function captureFromManifest(
   if (manifest.status === "invalid") {
     return {
       status: "failed",
-      error: {
-        code: "manifest_invalid",
-        message: "Manifest validation failed",
-      },
+      error: makeError("manifest_invalid", "Manifest validation failed"),
       errors: manifest.errors,
     };
   }
@@ -121,11 +122,10 @@ export async function captureFromManifest(
   if (!effectiveBaseUrl) {
     return {
       status: "failed",
-      error: {
-        code: "base_url_missing",
-        message:
-          "Base URL was not provided in options and could not be found in manifest project.baseUrl",
-      },
+      error: makeError(
+        "base_url_missing",
+        "Base URL was not provided in options and could not be found in manifest project.baseUrl"
+      ),
     };
   }
 
@@ -134,10 +134,7 @@ export async function captureFromManifest(
   if (total === 0) {
     return {
       status: "failed",
-      error: {
-        code: "no_references",
-        message: "Manifest contains no references to capture",
-      },
+      error: makeError("no_references", "Manifest contains no references to capture"),
     };
   }
 
@@ -156,10 +153,10 @@ export async function captureFromManifest(
       results.push({
         referenceId: ref.id,
         status: "failed",
-        error: {
-          code: "invalid_reference_id",
-          message: `Reference ID does not match [A-Za-z0-9_-]{1,64}: ${ref.id}`,
-        },
+        error: makeError(
+          "invalid_reference_id",
+          `Reference ID does not match [A-Za-z0-9_-]{1,64}: ${ref.id}`
+        ),
         viewport: ref.viewport,
         deviceScaleFactor: dsf,
       });

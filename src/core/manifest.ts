@@ -9,6 +9,7 @@
 
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { makeError } from "./hints.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -37,6 +38,7 @@ export interface InvalidManifestResult {
     code: string;
     path: string;
     message: string;
+    hint?: string;
   }>;
 }
 
@@ -45,6 +47,7 @@ export interface ValidatorUnavailableResult {
   error: {
     code: "validator_unavailable";
     message: string;
+    hint?: string;
   };
 }
 
@@ -61,6 +64,7 @@ export interface PythonCliExecutionResult {
   error?: {
     code: string;
     message: string;
+    hint?: string;
   };
 }
 
@@ -100,10 +104,7 @@ export async function runPythonCli(
         status: "failed",
         stdout: "",
         exitCode: 1,
-        error: {
-          code: unavailableCode,
-          message: err?.message ?? String(err),
-        },
+        error: makeError(unavailableCode, err?.message ?? String(err)),
       };
     }
   }
@@ -121,10 +122,10 @@ export async function runPythonCli(
       status: "failed",
       stdout,
       exitCode: 1,
-      error: {
-        code: unavailableCode,
-        message: `Failed to parse Python stdout as JSON: ${parseErr?.message ?? String(parseErr)}`,
-      },
+      error: makeError(
+        unavailableCode,
+        `Failed to parse Python stdout as JSON: ${parseErr?.message ?? String(parseErr)}`
+      ),
     };
   }
 }

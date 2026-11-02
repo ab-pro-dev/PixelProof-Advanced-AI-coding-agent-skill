@@ -21,6 +21,8 @@ import re
 from typing import Any
 import numpy as np
 
+from pixelproof_image.hints import hint_for
+
 GRID_PATTERN = re.compile(r"^([1-9]\d*)[xX]([1-9]\d*)$")
 
 
@@ -201,95 +203,64 @@ def validate_region_weights(data: Any, path_prefix: str = "regionWeights") -> li
         List of error dicts [{"code": "invalid_region_weights", "path": str, "message": str}].
     """
     errors: list[dict[str, str]] = []
+    hint = hint_for("invalid_region_weights")
+
+    def _err(path: str, msg: str) -> dict[str, str]:
+        e = {"code": "invalid_region_weights", "path": path, "message": msg}
+        if hint is not None:
+            e["hint"] = hint
+        return e
+
     if not isinstance(data, dict):
-        errors.append({
-            "code": "invalid_region_weights",
-            "path": path_prefix,
-            "message": f"'{path_prefix}' must be an object, got {type(data).__name__}",
-        })
+        errors.append(_err(path_prefix, f"'{path_prefix}' must be an object, got {type(data).__name__}"))
         return errors
 
     grid_valid = False
     rows, cols = None, None
     if "grid" not in data:
-        errors.append({
-            "code": "invalid_region_weights",
-            "path": f"{path_prefix}.grid",
-            "message": f"Field '{path_prefix}.grid' is required",
-        })
+        errors.append(_err(f"{path_prefix}.grid", f"Field '{path_prefix}.grid' is required"))
     else:
         grid = data["grid"]
         if not isinstance(grid, dict):
-            errors.append({
-                "code": "invalid_region_weights",
-                "path": f"{path_prefix}.grid",
-                "message": f"Field '{path_prefix}.grid' must be an object",
-            })
+            errors.append(_err(f"{path_prefix}.grid", f"Field '{path_prefix}.grid' must be an object"))
         else:
             rows = grid.get("rows")
             cols = grid.get("cols")
             rows_valid = True
             cols_valid = True
             if isinstance(rows, bool) or not isinstance(rows, int) or rows <= 0:
-                errors.append({
-                    "code": "invalid_region_weights",
-                    "path": f"{path_prefix}.grid.rows",
-                    "message": f"Grid rows must be a positive integer, got {rows!r}",
-                })
+                errors.append(_err(f"{path_prefix}.grid.rows", f"Grid rows must be a positive integer, got {rows!r}"))
                 rows_valid = False
             if isinstance(cols, bool) or not isinstance(cols, int) or cols <= 0:
-                errors.append({
-                    "code": "invalid_region_weights",
-                    "path": f"{path_prefix}.grid.cols",
-                    "message": f"Grid cols must be a positive integer, got {cols!r}",
-                })
+                errors.append(_err(f"{path_prefix}.grid.cols", f"Grid cols must be a positive integer, got {cols!r}"))
                 cols_valid = False
             grid_valid = rows_valid and cols_valid
 
     if "weights" not in data:
-        errors.append({
-            "code": "invalid_region_weights",
-            "path": f"{path_prefix}.weights",
-            "message": f"Field '{path_prefix}.weights' is required",
-        })
+        errors.append(_err(f"{path_prefix}.weights", f"Field '{path_prefix}.weights' is required"))
     else:
         weights = data["weights"]
         if not isinstance(weights, list):
-            errors.append({
-                "code": "invalid_region_weights",
-                "path": f"{path_prefix}.weights",
-                "message": f"Field '{path_prefix}.weights' must be a list",
-            })
+            errors.append(_err(f"{path_prefix}.weights", f"Field '{path_prefix}.weights' must be a list"))
         else:
             if grid_valid and rows is not None and len(weights) != rows:
-                errors.append({
-                    "code": "invalid_region_weights",
-                    "path": f"{path_prefix}.weights",
-                    "message": f"Expected {rows} rows of weights, got {len(weights)}",
-                })
+                errors.append(_err(f"{path_prefix}.weights", f"Expected {rows} rows of weights, got {len(weights)}"))
             for r_idx, row in enumerate(weights):
                 row_path = f"{path_prefix}.weights[{r_idx}]"
                 if not isinstance(row, list):
-                    errors.append({
-                        "code": "invalid_region_weights",
-                        "path": row_path,
-                        "message": f"Row {r_idx} must be a list, got {type(row).__name__}",
-                    })
+                    errors.append(_err(row_path, f"Row {r_idx} must be a list, got {type(row).__name__}"))
                 else:
                     if grid_valid and cols is not None and len(row) != cols:
-                        errors.append({
-                            "code": "invalid_region_weights",
-                            "path": row_path,
-                            "message": f"Row {r_idx} expected {cols} columns, got {len(row)}",
-                        })
+                        errors.append(_err(row_path, f"Row {r_idx} expected {cols} columns, got {len(row)}"))
                     for c_idx, val in enumerate(row):
                         col_path = f"{row_path}[{c_idx}]"
                         if isinstance(val, bool) or not isinstance(val, (int, float)) or val <= 0 or val > 10:
-                            errors.append({
-                                "code": "invalid_region_weights",
-                                "path": col_path,
-                                "message": f"Weight at [{r_idx}][{c_idx}] must be a number > 0 and <= 10 (bool rejected), got {val!r}",
-                            })
+                            errors.append(
+                                _err(
+                                    col_path,
+                                    f"Weight at [{r_idx}][{c_idx}] must be a number > 0 and <= 10 (bool rejected), got {val!r}",
+                                )
+                            )
 
     return errors
 

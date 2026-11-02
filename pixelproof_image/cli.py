@@ -21,6 +21,7 @@ from pathlib import Path
 import sys
 
 from pixelproof_image.final_report import build_report, write_report
+from pixelproof_image.hints import make_error
 from pixelproof_image.inspect_project import inspect_project
 from pixelproof_image.iteration import evaluate_progress, record_iteration
 from pixelproof_image.manifest import validate_manifest
@@ -185,10 +186,10 @@ def main(argv: list[str] | None = None) -> None:
             fail_report = {
                 "referenceId": args.reference_id,
                 "status": "failed",
-                "error": {
-                    "code": "weights_require_regions",
-                    "message": "--weights requires --regions to be enabled.",
-                },
+                "error": make_error(
+                    "weights_require_regions",
+                    "--weights requires --regions to be enabled.",
+                ),
             }
             sys.stdout.write(json.dumps(fail_report, indent=2) + "\n")
             sys.exit(1)
@@ -200,10 +201,10 @@ def main(argv: list[str] | None = None) -> None:
                 fail_report = {
                     "referenceId": args.reference_id,
                     "status": "failed",
-                    "error": {
-                        "code": "invalid_weights_file",
-                        "message": f"Weights file does not exist or is not a file: {args.weights}",
-                    },
+                    "error": make_error(
+                        "invalid_weights_file",
+                        f"Weights file does not exist or is not a file: {args.weights}",
+                    ),
                 }
                 sys.stdout.write(json.dumps(fail_report, indent=2) + "\n")
                 sys.exit(1)
@@ -214,10 +215,10 @@ def main(argv: list[str] | None = None) -> None:
                 fail_report = {
                     "referenceId": args.reference_id,
                     "status": "failed",
-                    "error": {
-                        "code": "invalid_weights_file",
-                        "message": f"Failed to parse weights JSON: {err}",
-                    },
+                    "error": make_error(
+                        "invalid_weights_file",
+                        f"Failed to parse weights JSON: {err}",
+                    ),
                 }
                 sys.stdout.write(json.dumps(fail_report, indent=2) + "\n")
                 sys.exit(1)
@@ -227,10 +228,10 @@ def main(argv: list[str] | None = None) -> None:
                 fail_report = {
                     "referenceId": args.reference_id,
                     "status": "failed",
-                    "error": {
-                        "code": "invalid_weights_file",
-                        "message": rw_errors[0]["message"],
-                    },
+                    "error": make_error(
+                        "invalid_weights_file",
+                        rw_errors[0]["message"],
+                    ),
                 }
                 sys.stdout.write(json.dumps(fail_report, indent=2) + "\n")
                 sys.exit(1)
@@ -243,10 +244,10 @@ def main(argv: list[str] | None = None) -> None:
                 fail_report = {
                     "referenceId": args.reference_id,
                     "status": "failed",
-                    "error": {
-                        "code": "invalid_grid",
-                        "message": str(err),
-                    },
+                    "error": make_error(
+                        "invalid_grid",
+                        str(err),
+                    ),
                 }
                 sys.stdout.write(json.dumps(fail_report, indent=2) + "\n")
                 sys.exit(1)
@@ -276,10 +277,10 @@ def main(argv: list[str] | None = None) -> None:
         if not summary_file.exists() or not summary_file.is_file():
             err_res = {
                 "status": "failed",
-                "error": {
-                    "code": "summary_missing",
-                    "message": f"Summary file not found: {args.summary_path}",
-                },
+                "error": make_error(
+                    "summary_missing",
+                    f"Summary file not found: {args.summary_path}",
+                ),
             }
             sys.stdout.write(json.dumps(err_res, indent=2) + "\n")
             sys.exit(1)
@@ -290,10 +291,10 @@ def main(argv: list[str] | None = None) -> None:
         except Exception as e:
             err_res = {
                 "status": "failed",
-                "error": {
-                    "code": "summary_unparseable",
-                    "message": f"Cannot parse summary JSON: {e}",
-                },
+                "error": make_error(
+                    "summary_unparseable",
+                    f"Cannot parse summary JSON: {e}",
+                ),
             }
             sys.stdout.write(json.dumps(err_res, indent=2) + "\n")
             sys.exit(1)
@@ -306,20 +307,20 @@ def main(argv: list[str] | None = None) -> None:
         except FileExistsError as e:
             err_res = {
                 "status": "failed",
-                "error": {
-                    "code": "output_exists",
-                    "message": str(e).replace("overwrite=True", "--overwrite"),
-                },
+                "error": make_error(
+                    "output_exists",
+                    str(e).replace("overwrite=True", "--overwrite"),
+                ),
             }
             sys.stdout.write(json.dumps(err_res, indent=2) + "\n")
             sys.exit(1)
         except Exception as e:
             err_res = {
                 "status": "failed",
-                "error": {
-                    "code": "report_failed",
-                    "message": str(e),
-                },
+                "error": make_error(
+                    "report_failed",
+                    str(e),
+                ),
             }
             sys.stdout.write(json.dumps(err_res, indent=2) + "\n")
             sys.exit(1)
@@ -329,11 +330,11 @@ def main(argv: list[str] | None = None) -> None:
         if manifest_res.get("status") != "valid":
             fail_report = {
                 "status": "failed",
-                "error": {
-                    "code": "manifest_invalid",
-                    "message": "Manifest validation failed",
-                    "errors": manifest_res.get("errors", []),
-                },
+                "error": make_error(
+                    "manifest_invalid",
+                    "Manifest validation failed",
+                    errors=manifest_res.get("errors", []),
+                ),
             }
             sys.stdout.write(json.dumps(fail_report, indent=2) + "\n")
             sys.exit(1)
@@ -415,10 +416,10 @@ def main(argv: list[str] | None = None) -> None:
         except Exception:
             err_doc = {
                 "status": "failed",
-                "error": {
-                    "code": "invalid_stall_window",
-                    "message": f"Invalid stall window: {args.stall_window!r}. Must be an integer >= 1.",
-                },
+                "error": make_error(
+                    "invalid_stall_window",
+                    f"Invalid stall window: {args.stall_window!r}. Must be an integer >= 1.",
+                ),
             }
             sys.stdout.write(json.dumps(err_doc, indent=2) + "\n")
             sys.exit(1)
@@ -427,10 +428,10 @@ def main(argv: list[str] | None = None) -> None:
         if not state_path.is_file():
             err_doc = {
                 "status": "failed",
-                "error": {
-                    "code": "state_missing",
-                    "message": f"State file not found: {args.state}",
-                },
+                "error": make_error(
+                    "state_missing",
+                    f"State file not found: {args.state}",
+                ),
             }
             sys.stdout.write(json.dumps(err_doc, indent=2) + "\n")
             sys.exit(1)
@@ -441,10 +442,10 @@ def main(argv: list[str] | None = None) -> None:
         except Exception as err:
             err_doc = {
                 "status": "failed",
-                "error": {
-                    "code": "state_corrupt",
-                    "message": f"State file {args.state} is corrupt or unparseable: {err}",
-                },
+                "error": make_error(
+                    "state_corrupt",
+                    f"State file {args.state} is corrupt or unparseable: {err}",
+                ),
             }
             sys.stdout.write(json.dumps(err_doc, indent=2) + "\n")
             sys.exit(1)
@@ -456,10 +457,10 @@ def main(argv: list[str] | None = None) -> None:
         ):
             err_doc = {
                 "status": "failed",
-                "error": {
-                    "code": "state_corrupt",
-                    "message": f"State file {args.state} has invalid structure or unsupported version",
-                },
+                "error": make_error(
+                    "state_corrupt",
+                    f"State file {args.state} has invalid structure or unsupported version",
+                ),
             }
             sys.stdout.write(json.dumps(err_doc, indent=2) + "\n")
             sys.exit(1)
