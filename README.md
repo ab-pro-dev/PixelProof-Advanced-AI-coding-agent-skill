@@ -61,9 +61,9 @@ The TypeScript CLI provides automated manifest validation, project inspection, b
 
 4. **Image Comparison & Visual Artifacts:**
    ```bash
-   pixelproof compare --id ID --reference PATH --actual PATH --out DIR [--overwrite] [--regions] [--grid RxC] [--python CMD]
+   pixelproof compare --id ID --reference PATH --actual PATH --out DIR [--overwrite] [--regions] [--grid RxC] [--weights PATH] [--python CMD]
    ```
-   Computes exact Mean Absolute Error (MAE), counts differing pixels, generates overlay, diff, and side-by-side visual artifacts, and optionally computes region-based grid measurements (`--regions`) with deterministic ranking (measured-only by `areaFraction * diffRatio`, no severity labels or thresholds).
+   Computes exact Mean Absolute Error (MAE), counts differing pixels, generates overlay, diff, and side-by-side visual artifacts, and optionally computes region-based grid measurements (`--regions`) with deterministic ranking (measured-only by `areaFraction * diffRatio`, no severity labels or thresholds) and optional owner-supplied region weights (`--weights PATH`, applying visual importance $V$ as `weightedScore = score * weight`).
 
 5. **Final Report Generation:**
    ```bash
@@ -93,9 +93,9 @@ Phase 1 tools are invoked via the Python CLI (`pixelproof_image.cli`):
 
 3. **Image Comparison & Visual Artifacts:**
    ```bash
-   python -m pixelproof_image.cli compare --id ID --reference PATH --actual PATH --out DIR [--overwrite] [--regions] [--grid RxC]
+   python -m pixelproof_image.cli compare --id ID --reference PATH --actual PATH --out DIR [--overwrite] [--regions] [--grid RxC] [--weights PATH]
    ```
-   Computes exact Mean Absolute Error (MAE), counts differing pixels, generates overlay, diff, and side-by-side visual artifacts, and optionally computes region-based grid measurements (`--regions`) with deterministic ranking (measured-only by `areaFraction * diffRatio`, no severity labels or thresholds).
+   Computes exact Mean Absolute Error (MAE), counts differing pixels, generates overlay, diff, and side-by-side visual artifacts, and optionally computes region-based grid measurements (`--regions`) with deterministic ranking (measured-only by `areaFraction * diffRatio`, no severity labels or thresholds) and optional owner-supplied region weights (`--weights PATH`, applying visual importance $V$ as `weightedScore = score * weight`).
 
 4. **Final Report Generation:**
    ```bash
@@ -107,7 +107,7 @@ Phase 1 tools are invoked via the Python CLI (`pixelproof_image.cli`):
 
 PixelProof maintains JSON Schema (2020-12) contracts for manifest inputs, comparison outputs, and run configurations:
 
-- `schemas/references.schema.json`: Contract for input reference manifests (`references.json`).
+- `schemas/references.schema.json`: Contract for input reference manifests (`references.json`), including optional owner-supplied `regionWeights` (`grid` and `weights` matrix).
 - `schemas/comparison-report.schema.json`: Contract for visual comparison tool outputs (`compared` and `failed` results).
 - `schemas/config.schema.json`: Contract for run configuration options (validating `config/default.json`; marked NOT BUILT YET pending Phase 3).
 

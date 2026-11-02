@@ -348,6 +348,104 @@ describe("TypeScript CLI wrappers (compare & report)", () => {
     assert.strictEqual(parsed.regions.ranking[0].index, 0);
   });
 
+  test("wrapper stdout byte-identical to Python CLI for compare --regions --weights", async () => {
+    const outTs = path.join(tmpDir, "out_byte_reg_w_ts");
+    const outPy = path.join(tmpDir, "out_byte_reg_w_py");
+    const imgDiff1 = path.join(tmpDir, "img_diff_w1.png");
+    const imgDiff2 = path.join(tmpDir, "img_diff_w2.png");
+    execSync(
+      `python3 -c "from PIL import Image; Image.new('RGB', (20, 20), 'red').save('${imgDiff1}'); img2 = Image.new('RGB', (20, 20), 'red'); img2.putpixel((0, 0), (0, 255, 0)); img2.save('${imgDiff2}')"`
+    );
+    const weightsPath = path.join(tmpDir, "test_weights.json");
+    fs.writeFileSync(
+      weightsPath,
+      JSON.stringify({
+        grid: { rows: 2, cols: 2 },
+        weights: [
+          [3.0, 1.0],
+          [1.0, 1.0],
+        ],
+      })
+    );
+
+    const { stdout: tsStdout, code: tsCode } = await runCli([
+      "compare",
+      "--id",
+      "byte-reg-w",
+      "--reference",
+      imgDiff1,
+      "--actual",
+      imgDiff2,
+      "--out",
+      outTs,
+      "--regions",
+      "--grid",
+      "2x2",
+      "--weights",
+      weightsPath,
+    ]);
+    assert.strictEqual(tsCode, 0);
+
+    const pyRes = await execFileAsync("python", [
+      "-m",
+      "pixelproof_image.cli",
+      "compare",
+      "--id",
+      "byte-reg-w",
+      "--reference",
+      imgDiff1,
+      "--actual",
+      imgDiff2,
+      "--out",
+      outPy,
+      "--regions",
+      "--grid",
+      "2x2",
+      "--weights",
+      weightsPath,
+    ]);
+
+    assert.strictEqual(tsStdout, pyRes.stdout);
+    const parsed = JSON.parse(tsStdout);
+    assert(parsed.regions);
+    assert(parsed.regions.weighted);
+    assert(Array.isArray(parsed.regions.weighted.ranking));
+    assert.strictEqual(parsed.regions.weighted.ranking.length, 1);
+    assert.strictEqual(parsed.regions.weighted.ranking[0].weight, 3.0);
+  });
+
+  test("wrapper compare with --weights without --regions exits 1 with weights_require_regions", async () => {
+    const outTs = path.join(tmpDir, "out_bad_weights_req");
+    const weightsPath = path.join(tmpDir, "dummy_weights.json");
+    fs.writeFileSync(
+      weightsPath,
+      JSON.stringify({
+        grid: { rows: 2, cols: 2 },
+        weights: [
+          [1.0, 1.0],
+          [1.0, 1.0],
+        ],
+      })
+    );
+    const { stdout, code } = await runCli([
+      "compare",
+      "--id",
+      "test-bad-weights-req",
+      "--reference",
+      imgIdentical1,
+      "--actual",
+      imgIdentical2,
+      "--out",
+      outTs,
+      "--weights",
+      weightsPath,
+    ]);
+    assert.strictEqual(code, 1);
+    const parsed = JSON.parse(stdout);
+    assert.strictEqual(parsed.status, "failed");
+    assert.strictEqual(parsed.error?.code, "weights_require_regions");
+  });
+
   test("wrapper compare with invalid --grid exits 1 with invalid_grid", async () => {
     const outTs = path.join(tmpDir, "out_bad_grid");
     const { stdout, code } = await runCli([

@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any, Union
 
 from pixelproof_image.compare import ImageLoadError, load_image
+from pixelproof_image.regions import validate_region_weights
 from pixelproof_image.report import REFERENCE_ID_PATTERN
 
 
@@ -299,6 +300,11 @@ def validate_manifest(manifest_path: Union[str, os.PathLike]) -> dict[str, Any]:
                 has_valid_scale = False
             else:
                 scale_factor = float(dsf)
+
+        # regionWeights check (optional)
+        if "regionWeights" in ref:
+            rw_errors = validate_region_weights(ref["regionWeights"], path_prefix=f"{prefix}.regionWeights")
+            errors.extend(rw_errors)
 
         # image path check (security: relative only, inside manifest_dir, no escape, readable)
         img_str = ref.get("image")

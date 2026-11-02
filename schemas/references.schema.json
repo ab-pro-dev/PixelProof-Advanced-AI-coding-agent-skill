@@ -63,6 +63,37 @@
             "type": "number",
             "exclusiveMinimum": 0
           },
+          "regionWeights": {
+            "type": "object",
+            "required": ["grid", "weights"],
+            "properties": {
+              "grid": {
+                "type": "object",
+                "required": ["rows", "cols"],
+                "properties": {
+                  "rows": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "cols": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              },
+              "weights": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 10
+                  }
+                }
+              }
+            }
+          },
           "notes": {
             "type": "string"
           }

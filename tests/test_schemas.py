@@ -382,6 +382,86 @@ def test_drift_check_manifest_schema_vs_python(references_schema: dict, tmp_path
             },
             False,
         ),
+        # 12. Valid regionWeights
+        (
+            {
+                "version": 1,
+                "references": [
+                    {
+                        "id": "r1",
+                        "route": "/",
+                        "captureType": "viewport",
+                        "viewport": {"width": 10, "height": 10},
+                        "image": "img10.png",
+                        "regionWeights": {
+                            "grid": {"rows": 1, "cols": 1},
+                            "weights": [[5.0]],
+                        },
+                    }
+                ],
+            },
+            True,
+        ),
+        # 13. Invalid regionWeights (weight > 10)
+        (
+            {
+                "version": 1,
+                "references": [
+                    {
+                        "id": "r1",
+                        "route": "/",
+                        "captureType": "viewport",
+                        "viewport": {"width": 10, "height": 10},
+                        "image": "img10.png",
+                        "regionWeights": {
+                            "grid": {"rows": 1, "cols": 1},
+                            "weights": [[11.0]],
+                        },
+                    }
+                ],
+            },
+            False,
+        ),
+        # 14. Invalid regionWeights (weight <= 0)
+        (
+            {
+                "version": 1,
+                "references": [
+                    {
+                        "id": "r1",
+                        "route": "/",
+                        "captureType": "viewport",
+                        "viewport": {"width": 10, "height": 10},
+                        "image": "img10.png",
+                        "regionWeights": {
+                            "grid": {"rows": 1, "cols": 1},
+                            "weights": [[0.0]],
+                        },
+                    }
+                ],
+            },
+            False,
+        ),
+        # 15. Invalid regionWeights (grid rows 0)
+        (
+            {
+                "version": 1,
+                "references": [
+                    {
+                        "id": "r1",
+                        "route": "/",
+                        "captureType": "viewport",
+                        "viewport": {"width": 10, "height": 10},
+                        "image": "img10.png",
+                        "regionWeights": {
+                            "grid": {"rows": 0, "cols": 1},
+                            "weights": [],
+                        },
+                    }
+                ],
+            },
+            False,
+        ),
     ]
 
     for idx, (data, expected_valid) in enumerate(test_cases):

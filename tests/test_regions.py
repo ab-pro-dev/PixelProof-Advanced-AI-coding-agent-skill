@@ -14,7 +14,14 @@ import numpy as np
 from PIL import Image
 import pytest
 
-from pixelproof_image.regions import compute_regions, parse_grid, rank_regions
+from pixelproof_image.regions import (
+    WeightsGridMismatchError,
+    apply_weights,
+    compute_regions,
+    parse_grid,
+    rank_regions,
+    validate_region_weights,
+)
 from pixelproof_image.report import run_comparison
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -379,4 +386,352 @@ def test_ranking_schema_accepts_and_rejects_zero(report_schema: dict, tmp_path: 
     bad_rank_rep["regions"]["ranking"][0]["rank"] = 0
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(bad_rank_rep, report_schema)
+
+
+def test_weights_all_ones_preserves_order(tmp_path: Path):
+    """When all weights are 1.0, weighted ranking has the identical order as unweighted ranking."""
+    p_ref = tmp_path / "ref.png"
+    p_act = tmp_path / "act.png"
+    # 200x160 with 4x4 grid (cells are 50x40)
+    ref_img = Image.new("RGB", (200, 160), (128, 128, 128))
+    act_img = Image.new("RGB", (200, 160), (128, 128, 128))
+    # Cell 0 (x: 0..49, y: 0..39): 10x10 block -> 100 diff pixels
+    for y in range(10):
+        for x in range(10):
+            act_img.putpixel((x, y), (255, 255, 255))
+    # Cell 5 (x: 50..99, y: 40..79): 20x20 block -> 400 diff pixels
+    for y in range(40, 60):
+        for x in range(50, 70):
+            act_img.putpixel((x, y), (255, 255, 255))
+    ref_img.save(p_ref)
+    act_img.save(p_act)
+
+    all_ones_weights = {
+        "grid": {"rows": 4, "cols": 4},
+        "weights": [[1.0] * 4 for _ in range(4)],
+    }
+
+    rep = run_comparison(
+        reference_id="test_all_ones",
+        reference_path=p_ref,
+        actual_path=p_act,
+        output_dir=tmp_path / "out_all_ones",
+        regions=True,
+        grid="4x4",
+        region_weights=all_ones_weights,
+    )
+    assert rep["status"] == "compared"
+    unweighted = rep["regions"]["ranking"]
+    weighted = rep["regions"]["weighted"]["ranking"]
+
+    assert len(unweighted) == 2
+    assert len(weighted) == 2
+    assert [u["index"] for u in unweighted] == [w["index"] for w in weighted]
+    for w in weighted:
+        assert w["weight"] == 1.0
+
+
+def test_weights_flip_ordering(tmp_path: Path):
+    """Owner weights flip the order: small diff cell weighted 5.0 beats large diff cell weighted 1.0."""
+    p_ref = tmp_path / "ref_flip.png"
+    p_act = tmp_path / "act_flip.png"
+    ref_img = Image.new("RGB", (200, 160), (128, 128, 128))
+    act_img = Image.new("RGB", (200, 160), (128, 128, 128))
+    # Cell 0 (index 0, row 0, col 0): 10x10 block = 100 pixels
+    for y in range(10):
+        for x in range(10):
+            act_img.putpixel((x, y), (255, 255, 255))
+    # Cell 5 (index 5, row 1, col 1): 20x20 block = 400 pixels
+    for y in range(40, 60):
+        for x in range(50, 70):
+            act_img.putpixel((x, y), (255, 255, 255))
+    ref_img.save(p_ref)
+    act_img.save(p_act)
+
+    weights_matrix = [[1.0] * 4 for _ in range(4)]
+    weights_matrix[0][0] = 5.0  # cell 0 gets weight 5.0
+
+    weights_data = {
+        "grid": {"rows": 4, "cols": 4},
+        "weights": weights_matrix,
+    }
+
+    rep = run_comparison(
+        reference_id="test_flip",
+        reference_path=p_ref,
+        actual_path=p_act,
+        output_dir=tmp_path / "out_flip",
+        regions=True,
+        grid="4x4",
+        region_weights=weights_data,
+    )
+    assert rep["status"] == "compared"
+    unweighted = rep["regions"]["ranking"]
+    weighted = rep["regions"]["weighted"]["ranking"]
+
+    # In unweighted ranking: cell 5 ranks 1st, cell 0 ranks 2nd
+    assert unweighted[0]["index"] == 5
+    assert math.isclose(unweighted[0]["score"], 0.0125)
+    assert unweighted[1]["index"] == 0
+    assert math.isclose(unweighted[1]["score"], 0.003125)
+
+    # In weighted ranking: cell 0 ranks 1st (0.015625), cell 5 ranks 2nd (0.0125)
+    assert weighted[0]["rank"] == 1
+    assert weighted[0]["index"] == 0
+    assert weighted[0]["weight"] == 5.0
+    assert math.isclose(weighted[0]["weightedScore"], 0.015625)
+
+    assert weighted[1]["rank"] == 2
+    assert weighted[1]["index"] == 5
+    assert weighted[1]["weight"] == 1.0
+    assert math.isclose(weighted[1]["weightedScore"], 0.0125)
+
+
+def test_weights_grid_mismatch(tmp_path: Path):
+    """Weights grid mismatch causes WeightsGridMismatchError / weights_grid_mismatch error code."""
+    p_ref = tmp_path / "ref_mismatch.png"
+    p_act = tmp_path / "act_mismatch.png"
+    Image.new("RGB", (200, 160), "black").save(p_ref)
+    act = Image.new("RGB", (200, 160), "black")
+    act.putpixel((0, 0), (255, 255, 255))
+    act.save(p_act)
+
+    # Comparison grid is 4x4, but weights grid is 3x4
+    mismatched_weights = {
+        "grid": {"rows": 3, "cols": 4},
+        "weights": [[1.0] * 4 for _ in range(3)],
+    }
+
+    # Direct function call raises WeightsGridMismatchError
+    with pytest.raises(WeightsGridMismatchError):
+        items = compute_regions(np.zeros((160, 200, 3)), np.zeros((160, 200, 3)), rows=4, cols=4)
+        items[0]["differingPixels"] = 1
+        apply_weights(items, mismatched_weights, grid=(4, 4))
+
+    # run_comparison returns failed report with weights_grid_mismatch
+    rep = run_comparison(
+        reference_id="mismatch_test",
+        reference_path=p_ref,
+        actual_path=p_act,
+        output_dir=tmp_path / "out_mismatch",
+        regions=True,
+        grid="4x4",
+        region_weights=mismatched_weights,
+    )
+    assert rep["status"] == "failed"
+    assert rep["error"]["code"] == "weights_grid_mismatch"
+
+
+def test_no_weights_no_weighted_key(tmp_path: Path):
+    """Without weights provided, 'weighted' key is absent from regions output."""
+    p_ref = tmp_path / "ref_noweights.png"
+    p_act = tmp_path / "act_noweights.png"
+    Image.new("RGB", (40, 40), "white").save(p_ref)
+    Image.new("RGB", (40, 40), "black").save(p_act)
+
+    rep = run_comparison(
+        reference_id="no_weights",
+        reference_path=p_ref,
+        actual_path=p_act,
+        output_dir=tmp_path / "out_noweights",
+        regions=True,
+        grid="2x2",
+        region_weights=None,
+    )
+    assert rep["status"] == "compared"
+    assert "regions" in rep
+    assert "grid" in rep["regions"]
+    assert "items" in rep["regions"]
+    assert "ranking" in rep["regions"]
+    assert "weighted" not in rep["regions"]
+
+
+def test_weights_without_regions_fails(tmp_path: Path):
+    """Providing weights without enabling --regions produces weights_require_regions error."""
+    p_ref = tmp_path / "ref_noregon.png"
+    p_act = tmp_path / "act_noregon.png"
+    Image.new("RGB", (40, 40), "white").save(p_ref)
+    Image.new("RGB", (40, 40), "black").save(p_act)
+
+    weights_file = tmp_path / "weights.json"
+    weights_data = {
+        "grid": {"rows": 2, "cols": 2},
+        "weights": [[1.0, 1.0], [1.0, 1.0]],
+    }
+    weights_file.write_text(json.dumps(weights_data), encoding="utf-8")
+
+    # API call
+    rep = run_comparison(
+        reference_id="no_regions_api",
+        reference_path=p_ref,
+        actual_path=p_act,
+        output_dir=tmp_path / "out_no_reg_api",
+        regions=False,
+        region_weights=weights_data,
+    )
+    assert rep["status"] == "failed"
+    assert rep["error"]["code"] == "weights_require_regions"
+
+    # CLI call
+    cmd = [
+        sys.executable,
+        "-m",
+        "pixelproof_image.cli",
+        "compare",
+        "--id",
+        "no_regions_cli",
+        "--reference",
+        str(p_ref),
+        "--actual",
+        str(p_act),
+        "--out",
+        str(tmp_path / "out_no_reg_cli"),
+        "--weights",
+        str(weights_file),
+    ]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    assert proc.returncode == 1
+    cli_out = json.loads(proc.stdout)
+    assert cli_out["status"] == "failed"
+    assert cli_out["error"]["code"] == "weights_require_regions"
+
+
+def test_invalid_weights_cli_cases(tmp_path: Path):
+    """CLI exits 1 with invalid_weights_file for missing, unparseable, or invalid structure weights."""
+    p_ref = tmp_path / "ref_inv.png"
+    p_act = tmp_path / "act_inv.png"
+    Image.new("RGB", (40, 40), "white").save(p_ref)
+    Image.new("RGB", (40, 40), "black").save(p_act)
+
+    # 1. Nonexistent file
+    cmd_missing = [
+        sys.executable,
+        "-m",
+        "pixelproof_image.cli",
+        "compare",
+        "--id",
+        "inv_missing",
+        "--reference",
+        str(p_ref),
+        "--actual",
+        str(p_act),
+        "--out",
+        str(tmp_path / "out_missing"),
+        "--regions",
+        "--weights",
+        str(tmp_path / "nonexistent.json"),
+    ]
+    proc = subprocess.run(cmd_missing, capture_output=True, text=True)
+    assert proc.returncode == 1
+    out = json.loads(proc.stdout)
+    assert out["status"] == "failed"
+    assert out["error"]["code"] == "invalid_weights_file"
+
+    # 2. Corrupted JSON file
+    bad_json = tmp_path / "bad.json"
+    bad_json.write_text("{invalid json", encoding="utf-8")
+    cmd_bad = [
+        sys.executable,
+        "-m",
+        "pixelproof_image.cli",
+        "compare",
+        "--id",
+        "inv_bad",
+        "--reference",
+        str(p_ref),
+        "--actual",
+        str(p_act),
+        "--out",
+        str(tmp_path / "out_bad"),
+        "--regions",
+        "--weights",
+        str(bad_json),
+    ]
+    proc = subprocess.run(cmd_bad, capture_output=True, text=True)
+    assert proc.returncode == 1
+    out = json.loads(proc.stdout)
+    assert out["status"] == "failed"
+    assert out["error"]["code"] == "invalid_weights_file"
+
+    # 3. Invalid weight value (> 10)
+    bad_val = tmp_path / "bad_val.json"
+    bad_val.write_text(json.dumps({"grid": {"rows": 2, "cols": 2}, "weights": [[11.0, 1.0], [1.0, 1.0]]}))
+    cmd_val = [
+        sys.executable,
+        "-m",
+        "pixelproof_image.cli",
+        "compare",
+        "--id",
+        "inv_val",
+        "--reference",
+        str(p_ref),
+        "--actual",
+        str(p_act),
+        "--out",
+        str(tmp_path / "out_val"),
+        "--regions",
+        "--weights",
+        str(bad_val),
+    ]
+    proc = subprocess.run(cmd_val, capture_output=True, text=True)
+    assert proc.returncode == 1
+    out = json.loads(proc.stdout)
+    assert out["status"] == "failed"
+    assert out["error"]["code"] == "invalid_weights_file"
+
+
+def test_weights_schema_accepts_and_rejects(report_schema: dict, tmp_path: Path):
+    """Schema accepts valid weighted ranking and rejects invalid weighted entries or failed reports with weighted."""
+    p_ref = tmp_path / "ref_sch.png"
+    p_act = tmp_path / "act_sch.png"
+    Image.new("RGB", (40, 40), "green").save(p_ref)
+    act_img = Image.new("RGB", (40, 40), "green")
+    act_img.putpixel((5, 5), (255, 0, 0))
+    act_img.save(p_act)
+
+    weights_data = {
+        "grid": {"rows": 2, "cols": 2},
+        "weights": [[2.0, 1.0], [1.0, 1.0]],
+    }
+
+    rep = run_comparison(
+        reference_id="schema_weighted_test",
+        reference_path=p_ref,
+        actual_path=p_act,
+        output_dir=tmp_path / "out_schema_w",
+        regions=True,
+        grid="2x2",
+        region_weights=weights_data,
+    )
+    assert rep["status"] == "compared"
+    assert "weighted" in rep["regions"]
+
+    # Valid weighted report passes
+    jsonschema.validate(rep, report_schema)
+
+    # Reject failed report keeping "regions" (and thus "weighted")
+    failed_rep = copy.deepcopy(rep)
+    failed_rep["status"] = "failed"
+    failed_rep["error"] = {"code": "some_err", "message": "msg"}
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(failed_rep, report_schema)
+
+    # Reject weight > 10 (e.g. 10.5)
+    bad_w = copy.deepcopy(rep)
+    bad_w["regions"]["weighted"]["ranking"][0]["weight"] = 10.5
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(bad_w, report_schema)
+
+    # Reject weight <= 0
+    bad_w0 = copy.deepcopy(rep)
+    bad_w0["regions"]["weighted"]["ranking"][0]["weight"] = 0
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(bad_w0, report_schema)
+
+    # Reject rank < 1
+    bad_rk = copy.deepcopy(rep)
+    bad_rk["regions"]["weighted"]["ranking"][0]["rank"] = 0
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(bad_rk, report_schema)
+
 

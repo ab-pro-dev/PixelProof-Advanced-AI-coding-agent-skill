@@ -23,7 +23,7 @@ import sys
 from pixelproof_image.final_report import build_report, write_report
 from pixelproof_image.inspect_project import inspect_project
 from pixelproof_image.manifest import validate_manifest
-from pixelproof_image.regions import parse_grid
+from pixelproof_image.regions import parse_grid, validate_region_weights
 from pixelproof_image.report import run_comparison
 
 
@@ -79,6 +79,11 @@ def main(argv: list[str] | None = None) -> None:
         default=None,
         help="Grid dimensions RxC for regions (default: 4x4).",
     )
+    compare_parser.add_argument(
+        "--weights",
+        default=None,
+        help="Path to JSON file containing regionWeights object.",
+    )
 
     # 2. Validate subcommand
     validate_parser = subparsers.add_parser(
@@ -130,6 +135,60 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
 
     if args.command == "compare":
+        if args.weights and not args.regions:
+            fail_report = {
+                "referenceId": args.reference_id,
+                "status": "failed",
+                "error": {
+                    "code": "weights_require_regions",
+                    "message": "--weights requires --regions to be enabled.",
+                },
+            }
+            sys.stdout.write(json.dumps(fail_report, indent=2) + "\n")
+            sys.exit(1)
+
+        region_weights_data = None
+        if args.weights:
+            weights_path = Path(args.weights)
+            if not weights_path.is_file():
+                fail_report = {
+                    "referenceId": args.reference_id,
+                    "status": "failed",
+                    "error": {
+                        "code": "invalid_weights_file",
+                        "message": f"Weights file does not exist or is not a file: {args.weights}",
+                    },
+                }
+                sys.stdout.write(json.dumps(fail_report, indent=2) + "\n")
+                sys.exit(1)
+            try:
+                with open(weights_path, "r", encoding="utf-8") as f:
+                    region_weights_data = json.load(f)
+            except Exception as err:
+                fail_report = {
+                    "referenceId": args.reference_id,
+                    "status": "failed",
+                    "error": {
+                        "code": "invalid_weights_file",
+                        "message": f"Failed to parse weights JSON: {err}",
+                    },
+                }
+                sys.stdout.write(json.dumps(fail_report, indent=2) + "\n")
+                sys.exit(1)
+
+            rw_errors = validate_region_weights(region_weights_data)
+            if rw_errors:
+                fail_report = {
+                    "referenceId": args.reference_id,
+                    "status": "failed",
+                    "error": {
+                        "code": "invalid_weights_file",
+                        "message": rw_errors[0]["message"],
+                    },
+                }
+                sys.stdout.write(json.dumps(fail_report, indent=2) + "\n")
+                sys.exit(1)
+
         grid_arg = args.grid if args.grid is not None else "4x4"
         if args.regions or args.grid is not None:
             try:
@@ -154,6 +213,7 @@ def main(argv: list[str] | None = None) -> None:
             overwrite=args.overwrite,
             regions=args.regions,
             grid=grid_arg,
+            region_weights=region_weights_data,
         )
         sys.stdout.write(json.dumps(report, indent=2) + "\n")
         sys.exit(0 if report.get("status") == "compared" else 1)

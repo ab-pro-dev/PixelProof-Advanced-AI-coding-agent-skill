@@ -190,6 +190,38 @@
                   }
                 }
               }
+            },
+            "weighted": {
+              "type": "object",
+              "required": ["ranking"],
+              "properties": {
+                "ranking": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["rank", "index", "weight", "weightedScore"],
+                    "properties": {
+                      "rank": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "index": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "weight": {
+                        "type": "number",
+                        "exclusiveMinimum": 0,
+                        "maximum": 10
+                      },
+                      "weightedScore": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         }

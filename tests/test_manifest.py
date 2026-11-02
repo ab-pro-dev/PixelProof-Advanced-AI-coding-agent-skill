@@ -506,3 +506,84 @@ def test_cli_validate_subprocess(tmp_path: Path):
     data_invalid = json.loads(proc_invalid.stdout)
     assert data_invalid["status"] == "invalid"
     assert len(data_invalid["errors"]) > 0
+
+
+def test_valid_region_weights_manifest(tmp_path: Path):
+    """Manifest with valid regionWeights is accepted and preserves regionWeights."""
+    manifest_path = tmp_path / "references.json"
+    img = tmp_path / "ref.png"
+    _create_image(img, (50, 50))
+
+    region_weights = {
+        "grid": {"rows": 2, "cols": 2},
+        "weights": [
+            [1.0, 2.5],
+            [3.0, 10.0],
+        ],
+    }
+
+    manifest_data = {
+        "version": 1,
+        "references": [
+            {
+                "id": "weighted-ref",
+                "image": "ref.png",
+                "route": "/weighted",
+                "viewport": {"width": 50, "height": 50},
+                "captureType": "viewport",
+                "regionWeights": region_weights,
+            }
+        ],
+    }
+    manifest_path.write_text(json.dumps(manifest_data), encoding="utf-8")
+
+    result = validate_manifest(manifest_path)
+    assert result["status"] == "valid"
+    assert result["referenceCount"] == 1
+    ref = result["references"][0]
+    assert "regionWeights" in ref
+    assert ref["regionWeights"] == region_weights
+
+
+def test_invalid_region_weights_manifest_shapes(tmp_path: Path):
+    """Manifest rejects various invalid shapes of regionWeights with code invalid_region_weights."""
+    img = tmp_path / "ref.png"
+    _create_image(img, (50, 50))
+
+    invalid_cases = [
+        # (regionWeights dict, expected path substring)
+        ({"grid": {"rows": 2, "cols": 2}, "weights": [[1.0, 2.0]]}, "weights"),  # wrong row count (1 instead of 2)
+        ({"grid": {"rows": 2, "cols": 2}, "weights": [[1.0, 2.0, 3.0], [1.0, 2.0]]}, "weights[0]"),  # wrong col count in row 0
+        ({"grid": {"rows": 2, "cols": 2}, "weights": [[0, 1.0], [2.0, 3.0]]}, "weights[0][0]"),  # zero
+        ({"grid": {"rows": 2, "cols": 2}, "weights": [[-1.5, 1.0], [2.0, 3.0]]}, "weights[0][0]"),  # negative
+        ({"grid": {"rows": 2, "cols": 2}, "weights": [[11, 1.0], [2.0, 3.0]]}, "weights[0][0]"),  # > 10 (11)
+        ({"grid": {"rows": 2, "cols": 2}, "weights": [[True, 1.0], [2.0, 3.0]]}, "weights[0][0]"),  # bool in weight
+        ({"grid": {"rows": 2, "cols": 2}, "weights": [["5", 1.0], [2.0, 3.0]]}, "weights[0][0]"),  # string in weight
+        ({"grid": {"rows": True, "cols": 2}, "weights": [[1.0, 2.0]]}, "grid.rows"),  # bool in rows
+        ({"grid": {"rows": 0, "cols": 2}, "weights": []}, "grid.rows"),  # 0 rows
+        ({"grid": {"rows": 2, "cols": -1}, "weights": [[1.0], [1.0]]}, "grid.cols"),  # negative cols
+    ]
+
+    for idx, (rw, path_part) in enumerate(invalid_cases):
+        mpath = tmp_path / f"ref_invalid_{idx}.json"
+        manifest_data = {
+            "version": 1,
+            "references": [
+                {
+                    "id": f"invalid-rw-{idx}",
+                    "image": "ref.png",
+                    "route": f"/{idx}",
+                    "viewport": {"width": 50, "height": 50},
+                    "captureType": "viewport",
+                    "regionWeights": rw,
+                }
+            ],
+        }
+        mpath.write_text(json.dumps(manifest_data), encoding="utf-8")
+        res = validate_manifest(mpath)
+        assert res["status"] == "invalid", f"Expected case {idx} to be invalid: {rw}"
+        assert any(
+            err["code"] == "invalid_region_weights" and path_part in err["path"]
+            for err in res["errors"]
+        ), f"Case {idx} did not have invalid_region_weights with {path_part}: {res['errors']}"
+

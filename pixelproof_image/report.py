@@ -20,7 +20,14 @@ from typing import Any, Union
 
 from pixelproof_image.compare import compare_images, load_image
 from pixelproof_image.overlay import make_diff, make_overlay, make_side_by_side
-from pixelproof_image.regions import compute_regions, parse_grid, rank_regions
+from pixelproof_image.regions import (
+    compute_regions,
+    parse_grid,
+    rank_regions,
+    apply_weights,
+    WeightsGridMismatchError,
+    validate_region_weights,
+)
 
 # Allowed reference IDs: alphanumeric, underscores, hyphens, 1 to 64 characters
 REFERENCE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
@@ -42,6 +49,7 @@ def run_comparison(
     overwrite: bool = False,
     regions: bool = False,
     grid: tuple[int, int] | str = (4, 4),
+    region_weights: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Run visual comparison and generate artifacts for a single reference.
 
@@ -89,6 +97,17 @@ def run_comparison(
                     f"Invalid reference ID: {reference_id!r}. Must contain only "
                     "alphanumeric characters, underscores, and hyphens, and be 1 to 64 characters long."
                 ),
+            },
+        }
+
+    # Validate region weights dependency
+    if region_weights is not None and not regions:
+        return {
+            "referenceId": reference_id,
+            "status": "failed",
+            "error": {
+                "code": "weights_require_regions",
+                "message": "--weights requires --regions to be enabled.",
             },
         }
 
@@ -239,7 +258,7 @@ def run_comparison(
         region_items = compute_regions(ref_arr, act_arr, rows=parsed_rows, cols=parsed_cols)
         effective_rows = max(1, min(parsed_rows, ref_size.height))
         effective_cols = max(1, min(parsed_cols, ref_size.width))
-        report["regions"] = {
+        regions_doc: dict[str, Any] = {
             "grid": {
                 "rows": effective_rows,
                 "cols": effective_cols,
@@ -247,5 +266,33 @@ def run_comparison(
             "items": region_items,
             "ranking": rank_regions(region_items),
         }
+        if region_weights is not None:
+            try:
+                weighted_items = apply_weights(
+                    region_items,
+                    region_weights,
+                    grid=(effective_rows, effective_cols),
+                )
+                regions_doc["weighted"] = {
+                    "ranking": [
+                        {
+                            "rank": rank,
+                            "index": w["index"],
+                            "weight": w["weight"],
+                            "weightedScore": w["weightedScore"],
+                        }
+                        for rank, w in enumerate(weighted_items, start=1)
+                    ]
+                }
+            except WeightsGridMismatchError as err:
+                return {
+                    "referenceId": reference_id,
+                    "status": "failed",
+                    "error": {
+                        "code": "weights_grid_mismatch",
+                        "message": str(err),
+                    },
+                }
+        report["regions"] = regions_doc
 
     return report

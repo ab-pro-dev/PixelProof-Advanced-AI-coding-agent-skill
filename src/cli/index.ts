@@ -100,6 +100,7 @@ Required flags:
 Options:
   --regions           Include region-based comparison measurements
   --grid <RxC>        Grid dimensions for regions (default: 4x4)
+  --weights <path>    Path to JSON file containing regionWeights object
   --overwrite         Overwrite existing comparison artifacts
   --python <cmd>      Python executable command or path (default: python)
   --help, -h          Show help for compare command
@@ -261,6 +262,7 @@ const COMPARE_OPTIONS = {
   overwrite: { type: "boolean" },
   regions: { type: "boolean" },
   grid: { type: "string" },
+  weights: { type: "string" },
   python: { type: "string" },
 } as const;
 
@@ -274,6 +276,7 @@ async function runCompare(args: string[]): Promise<void> {
     overwrite?: boolean;
     regions?: boolean;
     grid?: string;
+    weights?: string;
     python?: string;
   };
   let positionals: string[];
@@ -331,6 +334,9 @@ async function runCompare(args: string[]): Promise<void> {
   }
   if (values.grid) {
     cliArgs.push("--grid", values.grid);
+  }
+  if (values.weights) {
+    cliArgs.push("--weights", values.weights);
   }
 
   const res = await runPythonCli(cliArgs, {
