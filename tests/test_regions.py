@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import math
 from pathlib import Path
@@ -13,7 +14,7 @@ import numpy as np
 from PIL import Image
 import pytest
 
-from pixelproof_image.regions import compute_regions, parse_grid
+from pixelproof_image.regions import compute_regions, parse_grid, rank_regions
 from pixelproof_image.report import run_comparison
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -241,3 +242,141 @@ def test_schema_accepts_regions_and_rejects_failed_with_regions(
     }
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(bad_failed_report, report_schema)
+
+
+def test_ranking_known_case():
+    """(a) known case from Step 20 gives exactly one ranked entry, rank 1, index 10, score == 100 / (200*160) exactly as float."""
+    height, width = 160, 200
+    ref = np.full((height, width, 3), 128, dtype=np.uint8)
+    act = ref.copy()
+    act[90:100, 130:140] = 255  # 10x10 block in cell (row 2, col 2) -> index 10
+
+    regions = compute_regions(ref, act, rows=4, cols=4)
+    ranking = rank_regions(regions)
+
+    assert len(ranking) == 1
+    assert ranking[0] == {
+        "rank": 1,
+        "index": 10,
+        "score": 100 / (200 * 160),
+    }
+    assert ranking[0]["score"] == 100 / (200 * 160)
+
+
+def test_ranking_two_blocks_different_size():
+    """(b) two blocks of different size in different cells rank the bigger-difference cell first."""
+    height, width = 160, 200
+    ref = np.full((height, width, 3), 128, dtype=np.uint8)
+    act = ref.copy()
+
+    # Cell 0 (row 0, col 0, [0:40, 0:50]): 10x10 block -> 100 differing pixels
+    act[10:20, 10:20] = 255
+    # Cell 5 (row 1, col 1, [40:80, 50:100]): 20x20 block -> 400 differing pixels
+    act[45:65, 55:75] = 255
+
+    regions = compute_regions(ref, act, rows=4, cols=4)
+    ranking = rank_regions(regions)
+
+    assert len(ranking) == 2
+    # Cell 5 has bigger difference (score 400 / (200*160)) -> rank 1
+    assert ranking[0]["rank"] == 1
+    assert ranking[0]["index"] == 5
+    assert ranking[0]["score"] == 400 / (200 * 160)
+
+    # Cell 0 has smaller difference (score 100 / (200*160)) -> rank 2
+    assert ranking[1]["rank"] == 2
+    assert ranking[1]["index"] == 0
+    assert ranking[1]["score"] == 100 / (200 * 160)
+
+
+def test_ranking_tie_breaks_by_lower_index():
+    """(c) tie case (two identical blocks in two cells) breaks by lower index."""
+    height, width = 160, 200
+    ref = np.full((height, width, 3), 128, dtype=np.uint8)
+    act = ref.copy()
+
+    # Cell 1 (row 0, col 1): 10x10 block -> 100 pixels
+    act[10:20, 60:70] = 255
+    # Cell 7 (row 1, col 3): 10x10 block -> 100 pixels
+    act[50:60, 160:170] = 255
+
+    regions = compute_regions(ref, act, rows=4, cols=4)
+    ranking = rank_regions(regions)
+
+    assert len(ranking) == 2
+    assert ranking[0]["score"] == ranking[1]["score"]
+    # Lower index breaks tie
+    assert ranking[0]["rank"] == 1
+    assert ranking[0]["index"] == 1
+    assert ranking[1]["rank"] == 2
+    assert ranking[1]["index"] == 7
+
+
+def test_ranking_identical_images_empty():
+    """(d) identical images give an empty ranking."""
+    arr = np.full((80, 100, 3), 75, dtype=np.uint8)
+    regions = compute_regions(arr, arr, rows=4, cols=4)
+    ranking = rank_regions(regions)
+    assert ranking == []
+
+
+def test_ranking_scores_sum_equals_global_differing_ratio():
+    """(e) scores sum equals globalDifferingPixels / (W*H) within 1e-12."""
+    height, width = 160, 200
+    rng = np.random.default_rng(999)
+    ref = rng.integers(0, 256, size=(height, width, 3), dtype=np.uint8)
+    act = ref.copy()
+
+    act[10:30, 20:50] = rng.integers(0, 256, size=(20, 30, 3), dtype=np.uint8)
+    act[70:100, 80:140] = rng.integers(0, 256, size=(30, 60, 3), dtype=np.uint8)
+    act[110:130, 10:40] = rng.integers(0, 256, size=(20, 30, 3), dtype=np.uint8)
+
+    regions = compute_regions(ref, act, rows=4, cols=4)
+    ranking = rank_regions(regions)
+
+    global_diff = int(np.sum(np.any(ref != act, axis=-1)))
+    expected_ratio = global_diff / (width * height)
+
+    scores_sum = sum(entry["score"] for entry in ranking)
+    assert math.isclose(scores_sum, expected_ratio, abs_tol=1e-12)
+
+
+def test_ranking_schema_accepts_and_rejects_zero(report_schema: dict, tmp_path: Path):
+    """(f) schema accepts a real ranking and rejects score 0 or rank 0."""
+    p_ref = tmp_path / "ref_rank.png"
+    p_act = tmp_path / "act_rank.png"
+    Image.new("RGB", (40, 40), "green").save(p_ref)
+    act_img = Image.new("RGB", (40, 40), "green")
+    for y in range(10):
+        for x in range(10):
+            act_img.putpixel((x, y), (255, 0, 0))
+    act_img.save(p_act)
+
+    rep = run_comparison(
+        reference_id="schema_rank_test",
+        reference_path=p_ref,
+        actual_path=p_act,
+        output_dir=tmp_path / "out_schema_rank",
+        regions=True,
+        grid="2x2",
+    )
+    assert rep["status"] == "compared"
+    assert "regions" in rep
+    assert "ranking" in rep["regions"]
+    assert len(rep["regions"]["ranking"]) > 0
+
+    # Real ranking accepted
+    jsonschema.validate(rep, report_schema)
+
+    # Reject score 0
+    bad_score_rep = copy.deepcopy(rep)
+    bad_score_rep["regions"]["ranking"][0]["score"] = 0
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(bad_score_rep, report_schema)
+
+    # Reject rank 0
+    bad_rank_rep = copy.deepcopy(rep)
+    bad_rank_rep["regions"]["ranking"][0]["rank"] = 0
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(bad_rank_rep, report_schema)
+

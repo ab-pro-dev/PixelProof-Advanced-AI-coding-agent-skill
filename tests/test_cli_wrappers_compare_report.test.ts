@@ -293,6 +293,59 @@ describe("TypeScript CLI wrappers (compare & report)", () => {
     assert.strictEqual(parsed.regions.grid.rows, 2);
     assert.strictEqual(parsed.regions.grid.cols, 2);
     assert.strictEqual(parsed.regions.items.length, 4);
+    assert(Array.isArray(parsed.regions.ranking));
+  });
+
+  test("wrapper stdout byte-identical to Python CLI for compare --regions with differences and ranking", async () => {
+    const outTs = path.join(tmpDir, "out_byte_reg_diff_ts");
+    const outPy = path.join(tmpDir, "out_byte_reg_diff_py");
+
+    const imgDiff1 = path.join(tmpDir, "img_diff1.png");
+    const imgDiff2 = path.join(tmpDir, "img_diff2.png");
+    execSync(
+      `python3 -c "from PIL import Image; Image.new('RGB', (20, 20), 'red').save('${imgDiff1}'); img2 = Image.new('RGB', (20, 20), 'red'); img2.putpixel((0, 0), (0, 255, 0)); img2.save('${imgDiff2}')"`
+    );
+
+    const { stdout: tsStdout, code: tsCode } = await runCli([
+      "compare",
+      "--id",
+      "byte-reg-diff",
+      "--reference",
+      imgDiff1,
+      "--actual",
+      imgDiff2,
+      "--out",
+      outTs,
+      "--regions",
+      "--grid",
+      "2x2",
+    ]);
+    assert.strictEqual(tsCode, 0);
+
+    const pyRes = await execFileAsync("python", [
+      "-m",
+      "pixelproof_image.cli",
+      "compare",
+      "--id",
+      "byte-reg-diff",
+      "--reference",
+      imgDiff1,
+      "--actual",
+      imgDiff2,
+      "--out",
+      outPy,
+      "--regions",
+      "--grid",
+      "2x2",
+    ]);
+
+    assert.strictEqual(tsStdout, pyRes.stdout);
+    const parsed = JSON.parse(tsStdout);
+    assert(parsed.regions);
+    assert(Array.isArray(parsed.regions.ranking));
+    assert.strictEqual(parsed.regions.ranking.length, 1);
+    assert.strictEqual(parsed.regions.ranking[0].rank, 1);
+    assert.strictEqual(parsed.regions.ranking[0].index, 0);
   });
 
   test("wrapper compare with invalid --grid exits 1 with invalid_grid", async () => {

@@ -20,7 +20,7 @@ from typing import Any, Union
 
 from pixelproof_image.compare import compare_images, load_image
 from pixelproof_image.overlay import make_diff, make_overlay, make_side_by_side
-from pixelproof_image.regions import compute_regions, parse_grid
+from pixelproof_image.regions import compute_regions, parse_grid, rank_regions
 
 # Allowed reference IDs: alphanumeric, underscores, hyphens, 1 to 64 characters
 REFERENCE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
@@ -245,6 +245,7 @@ def run_comparison(
                 "cols": effective_cols,
             },
             "items": region_items,
+            "ranking": rank_regions(region_items),
         }
 
     return report

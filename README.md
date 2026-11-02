@@ -63,7 +63,7 @@ The TypeScript CLI provides automated manifest validation, project inspection, b
    ```bash
    pixelproof compare --id ID --reference PATH --actual PATH --out DIR [--overwrite] [--regions] [--grid RxC] [--python CMD]
    ```
-   Computes exact Mean Absolute Error (MAE), counts differing pixels, generates overlay, diff, and side-by-side visual artifacts, and optionally computes region-based grid measurements (`--regions`).
+   Computes exact Mean Absolute Error (MAE), counts differing pixels, generates overlay, diff, and side-by-side visual artifacts, and optionally computes region-based grid measurements (`--regions`) with deterministic ranking (measured-only by `areaFraction * diffRatio`, no severity labels or thresholds).
 
 5. **Final Report Generation:**
    ```bash
@@ -95,7 +95,7 @@ Phase 1 tools are invoked via the Python CLI (`pixelproof_image.cli`):
    ```bash
    python -m pixelproof_image.cli compare --id ID --reference PATH --actual PATH --out DIR [--overwrite] [--regions] [--grid RxC]
    ```
-   Computes exact Mean Absolute Error (MAE), counts differing pixels, generates overlay, diff, and side-by-side visual artifacts, and optionally computes region-based grid measurements (`--regions`).
+   Computes exact Mean Absolute Error (MAE), counts differing pixels, generates overlay, diff, and side-by-side visual artifacts, and optionally computes region-based grid measurements (`--regions`) with deterministic ranking (measured-only by `areaFraction * diffRatio`, no severity labels or thresholds).
 
 4. **Final Report Generation:**
    ```bash

@@ -142,3 +142,33 @@ def compute_regions(
             })
 
     return regions
+
+
+def rank_regions(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Rank regions with differingPixels > 0 by score descending, ties broken by lower index.
+
+    AGENT PROPOSAL: Proposed ranking score formula (score = areaFraction * diffRatio)
+    pending open question Q8 (priority factors and calibration).
+
+    Args:
+        items: List of region dictionaries produced by compute_regions.
+
+    Returns:
+        List of dictionaries with {"rank": int, "index": int, "score": float}
+        for regions with differingPixels > 0, sorted by score descending,
+        breaking ties by lower index. Regions with zero differences never appear.
+    """
+    candidates = []
+    for item in items:
+        if item.get("differingPixels", 0) > 0:
+            score = float(item["areaFraction"] * item["diffRatio"])
+            candidates.append((score, item["index"]))
+
+    # Sort descending by score (-score), ties broken by lower index (+idx)
+    candidates.sort(key=lambda x: (-x[0], x[1]))
+
+    return [
+        {"rank": rank, "index": idx, "score": score}
+        for rank, (score, idx) in enumerate(candidates, start=1)
+    ]
+

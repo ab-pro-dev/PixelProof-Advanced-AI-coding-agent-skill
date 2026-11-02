@@ -38,6 +38,7 @@ Copied faithfully from §19 of the project documentation:
 - **Deliverables:**
   - Add region-based comparison.
   - Regions: scripts proposal, grid 4x4, measurements only (AGENT PROPOSAL pending Q8)
+  - Ranking: areaFraction x diffRatio, measured only, no severity (AGENT PROPOSAL pending Q8)
   - Add optional SSIM and geometry checks.
   - Rank issues by visual importance and reuse.
   - Implement the refinement loop and iteration limits.

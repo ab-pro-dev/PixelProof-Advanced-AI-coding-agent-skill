@@ -169,6 +169,27 @@
                   }
                 }
               }
+            },
+            "ranking": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["rank", "index", "score"],
+                "properties": {
+                  "rank": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "index": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "score": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                }
+              }
             }
           }
         }
