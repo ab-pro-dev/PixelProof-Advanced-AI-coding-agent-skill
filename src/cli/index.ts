@@ -45,6 +45,7 @@ Available Commands:
   compare    Compare reference and actual images and output comparison artifacts
   report     Build and write final report files (JSON and Markdown)
   iterate    Record one refinement iteration and compute deltas vs previous iteration
+  progress   Evaluate iteration progress, regressions, and stop reasons
 
 Options:
   --help, -h Show help for pixelproof
@@ -142,6 +143,23 @@ Options:
   --overwrite          Overwrite existing comparison artifacts
   --python <cmd>       Python executable command or path (default: python)
   --help, -h           Show help for iterate command
+`);
+  process.exit(0);
+}
+
+function printProgressHelp(): void {
+  console.log(`Evaluate iteration progress, regressions, and stop reasons from state file.
+
+Usage:
+  pixelproof progress --state <path> [options]
+
+Required flags:
+  --state <path>        Path to iterations.json state file
+
+Options:
+  --stall-window <n>    Number of consecutive iterations required to detect stall (default: 2)
+  --python <cmd>        Python executable command or path (default: python)
+  --help, -h            Show help for progress command
 `);
   process.exit(0);
 }
@@ -516,6 +534,66 @@ async function runIterate(args: string[]): Promise<void> {
   process.exit(res.exitCode);
 }
 
+const PROGRESS_OPTIONS = {
+  help: { type: "boolean", short: "h" },
+  state: { type: "string" },
+  "stall-window": { type: "string" },
+  python: { type: "string" },
+} as const;
+
+async function runProgress(args: string[]): Promise<void> {
+  let values: {
+    help?: boolean;
+    state?: string;
+    "stall-window"?: string;
+    python?: string;
+  };
+  let positionals: string[];
+
+  try {
+    const parsed = parseArgs({
+      args,
+      options: PROGRESS_OPTIONS,
+      allowPositionals: true,
+      strict: true,
+    });
+    values = parsed.values;
+    positionals = parsed.positionals;
+  } catch (err: any) {
+    printUsageError(err?.message ?? String(err));
+  }
+
+  if (values.help) {
+    printProgressHelp();
+  }
+
+  if (positionals.length > 0) {
+    printUsageError(`Unexpected positional argument(s): ${positionals.join(", ")}`);
+  }
+
+  if (!values.state || values.state.trim().length === 0) {
+    printUsageError("Missing required flag: --state");
+  }
+
+  const cliArgs = ["progress", "--state", values.state];
+  if (values["stall-window"]) {
+    cliArgs.push("--stall-window", values["stall-window"]);
+  }
+
+  const res = await runPythonCli(cliArgs, {
+    pythonCommand: values.python,
+    unavailableCode: "progress_unavailable",
+  });
+
+  if (res.status === "failed") {
+    console.log(JSON.stringify({ status: "failed", error: res.error }, null, 2));
+    process.exit(1);
+  }
+
+  process.stdout.write(res.stdout);
+  process.exit(res.exitCode);
+}
+
 const CAPTURE_OPTIONS = {
   help: { type: "boolean", short: "h" },
   manifest: { type: "string" },
@@ -617,7 +695,7 @@ async function main(): Promise<void> {
 
   if (rawArgs.length === 0) {
     printUsageError(
-      "Missing required command. Supported commands: validate, inspect, capture, compare, report, iterate. Use --help for usage."
+      "Missing required command. Supported commands: validate, inspect, capture, compare, report, iterate, progress. Use --help for usage."
     );
   }
 
@@ -657,8 +735,13 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (firstArg === "progress") {
+    await runProgress(rawArgs.slice(1));
+    return;
+  }
+
   printUsageError(
-    `Unknown command: '${firstArg}'. Supported commands: validate, inspect, capture, compare, report, iterate.`
+    `Unknown command: '${firstArg}'. Supported commands: validate, inspect, capture, compare, report, iterate, progress.`
   );
 }
 

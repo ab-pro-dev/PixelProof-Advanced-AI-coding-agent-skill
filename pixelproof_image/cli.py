@@ -22,7 +22,7 @@ import sys
 
 from pixelproof_image.final_report import build_report, write_report
 from pixelproof_image.inspect_project import inspect_project
-from pixelproof_image.iteration import record_iteration
+from pixelproof_image.iteration import evaluate_progress, record_iteration
 from pixelproof_image.manifest import validate_manifest
 from pixelproof_image.regions import parse_grid, validate_region_weights
 from pixelproof_image.report import run_comparison
@@ -159,6 +159,23 @@ def main(argv: list[str] | None = None) -> None:
         action="store_true",
         default=False,
         help="Overwrite existing comparison artifacts.",
+    )
+
+    # 6. Progress subcommand
+    progress_parser = subparsers.add_parser(
+        "progress",
+        help="Evaluate iteration progress, regressions, stall condition, and stop reasons.",
+    )
+    progress_parser.add_argument(
+        "--state",
+        required=True,
+        help="Path to iterations.json state file.",
+    )
+    progress_parser.add_argument(
+        "--stall-window",
+        default="2",
+        dest="stall_window",
+        help="Number of consecutive iterations required to detect a stall (default: 2).",
     )
 
     args = parser.parse_args(argv)
@@ -379,6 +396,7 @@ def main(argv: list[str] | None = None) -> None:
             "iterationsRemaining": record_res["iterationsRemaining"],
             "overLimit": record_res.get("overLimit", False),
             "deltas": record_res["deltas"],
+            "progress": record_res["progress"],
             "references": compact_refs,
         }
         if "maxIterationsIgnored" in record_res:
@@ -388,6 +406,67 @@ def main(argv: list[str] | None = None) -> None:
 
         sys.stdout.write(json.dumps(cli_doc, indent=2) + "\n")
         sys.exit(0 if failed_count == 0 else 1)
+
+    if args.command == "progress":
+        try:
+            stall_win = int(args.stall_window)
+            if stall_win < 1:
+                raise ValueError()
+        except Exception:
+            err_doc = {
+                "status": "failed",
+                "error": {
+                    "code": "invalid_stall_window",
+                    "message": f"Invalid stall window: {args.stall_window!r}. Must be an integer >= 1.",
+                },
+            }
+            sys.stdout.write(json.dumps(err_doc, indent=2) + "\n")
+            sys.exit(1)
+
+        state_path = Path(args.state)
+        if not state_path.is_file():
+            err_doc = {
+                "status": "failed",
+                "error": {
+                    "code": "state_missing",
+                    "message": f"State file not found: {args.state}",
+                },
+            }
+            sys.stdout.write(json.dumps(err_doc, indent=2) + "\n")
+            sys.exit(1)
+
+        try:
+            with open(state_path, "r", encoding="utf-8") as f:
+                state_data = json.load(f)
+        except Exception as err:
+            err_doc = {
+                "status": "failed",
+                "error": {
+                    "code": "state_corrupt",
+                    "message": f"State file {args.state} is corrupt or unparseable: {err}",
+                },
+            }
+            sys.stdout.write(json.dumps(err_doc, indent=2) + "\n")
+            sys.exit(1)
+
+        if (
+            not isinstance(state_data, dict)
+            or state_data.get("version") != 1
+            or not isinstance(state_data.get("iterations"), list)
+        ):
+            err_doc = {
+                "status": "failed",
+                "error": {
+                    "code": "state_corrupt",
+                    "message": f"State file {args.state} has invalid structure or unsupported version",
+                },
+            }
+            sys.stdout.write(json.dumps(err_doc, indent=2) + "\n")
+            sys.exit(1)
+
+        eval_res = evaluate_progress(state_data, stall_window=stall_win)
+        sys.stdout.write(json.dumps(eval_res, indent=2) + "\n")
+        sys.exit(0)
 
 
 if __name__ == "__main__":

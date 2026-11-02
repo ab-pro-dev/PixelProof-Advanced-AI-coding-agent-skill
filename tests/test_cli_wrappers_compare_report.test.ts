@@ -536,6 +536,64 @@ describe("TypeScript CLI wrappers (compare & report)", () => {
     assert.deepStrictEqual(parsed.deltas, { "ref-iter": { state: "new" } });
   });
 
+  test("wrapper stdout byte-identical to Python CLI for progress", async () => {
+    const progDir = path.join(tmpDir, "prog_test_byte");
+    fs.mkdirSync(progDir, { recursive: true });
+    const stateFile = path.join(progDir, "iterations.json");
+    fs.writeFileSync(
+      stateFile,
+      JSON.stringify({
+        version: 1,
+        maxIterations: 5,
+        iterations: [
+          {
+            number: 1,
+            timestamp: "2026-11-02T12:00:00Z",
+            references: {
+              "ref-1": { status: "compared", mae: 0.1, differingPixels: 400 },
+            },
+          },
+          {
+            number: 2,
+            timestamp: "2026-11-02T12:01:00Z",
+            references: {
+              "ref-1": { status: "compared", mae: 0.1, differingPixels: 400 },
+            },
+          },
+          {
+            number: 3,
+            timestamp: "2026-11-02T12:02:00Z",
+            references: {
+              "ref-1": { status: "compared", mae: 0.1, differingPixels: 400 },
+            },
+          },
+        ],
+      })
+    );
+
+    const { stdout: tsStdout, code: tsCode } = await runCli([
+      "progress",
+      "--state",
+      stateFile,
+    ]);
+    assert.strictEqual(tsCode, 0);
+
+    const pyRes = await execFileAsync("python", [
+      "-m",
+      "pixelproof_image.cli",
+      "progress",
+      "--state",
+      stateFile,
+    ]);
+
+    assert.strictEqual(tsStdout, pyRes.stdout);
+    const parsed = JSON.parse(tsStdout);
+    assert.strictEqual(parsed.stalled, true);
+    assert.strictEqual(parsed.stopReason, "stalled");
+    assert.strictEqual(parsed.stopIsSuccess, false);
+    assert.deepStrictEqual(parsed.totalDifferingPixels, [400, 400, 400]);
+  });
+
   test("calling setDefaultBrowserLauncher with NODE_ENV unset throws", () => {
     const prev = process.env.NODE_ENV;
     delete process.env.NODE_ENV;

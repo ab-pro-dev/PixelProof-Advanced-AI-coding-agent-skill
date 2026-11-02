@@ -77,6 +77,12 @@ The TypeScript CLI provides automated manifest validation, project inspection, b
    ```
    Records one refinement iteration and evaluates progress (MAE and differing pixels deltas) relative to the previous iteration under `<out>/state/iterations.json`. Iteration state + deltas, agent-driven (AGENT PROPOSAL pending Q1/Q8).
 
+7. **Iteration Progress & Stop Reasons:**
+   ```bash
+   pixelproof progress --state PATH [--stall-window N] [--python CMD]
+   ```
+   Evaluates iteration progress, regressions, stall conditions, and stop reasons from state file in read-only mode. Stall/regression/stop reasons (AGENT PROPOSAL pending Q1/Q8).
+
 Planned TypeScript CLI commands:
 - `pixelproof init`: NOT BUILT YET (Phase 4 / spec §11)
 - `pixelproof run`: NOT BUILT YET (Phase 3 / spec §11)
@@ -114,6 +120,12 @@ Phase 1 tools are invoked via the Python CLI (`pixelproof_image.cli`):
    python -m pixelproof_image.cli iterate --manifest PATH --actual-dir DIR --out DIR [--overwrite]
    ```
    Records one refinement iteration and evaluates progress (MAE and differing pixels deltas) relative to the previous iteration under `<out>/state/iterations.json`. Iteration state + deltas, agent-driven (AGENT PROPOSAL pending Q1/Q8).
+
+6. **Iteration Progress & Stop Reasons:**
+   ```bash
+   python -m pixelproof_image.cli progress --state PATH [--stall-window N]
+   ```
+   Evaluates iteration progress, regressions, stall conditions, and stop reasons from state file in read-only mode. Stall/regression/stop reasons (AGENT PROPOSAL pending Q1/Q8).
 
 ## Schemas
 

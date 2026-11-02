@@ -1,12 +1,12 @@
-"""PixelProof iteration tracking and delta calculation.
+"""PixelProof iteration tracking, delta calculation, and progress evaluation.
 
 AGENT PROPOSAL: Proposed iteration state schema, delta calculation rules,
-and status names ("recorded", "improved", "same", "worse", "recovered", "failed", "new")
-pending open architectural questions Q1 and Q8.
+stall detection window (default: 2), regression tracking rules, and stop reasons
+("blocked", "no_differences", "limit_reached", "stalled") pending open architectural questions Q1 and Q8.
 
 Tracks refinement iterations (§8.1, §8.3, §19 Phase 3) by appending iteration evidence
-to an atomic state file (iterations.json) and measuring progress (MAE and differing pixels)
-relative to the previous iteration.
+to an atomic state file (iterations.json), measuring progress (MAE and differing pixels)
+relative to the previous iteration, and evaluating stop reasons (§8.4).
 """
 
 from __future__ import annotations
@@ -177,6 +177,7 @@ def record_iteration(
 
     remaining = max(0, stored_max - number)
     over_limit = number > stored_max
+    progress_eval = evaluate_progress(state_doc, stall_window=2)
 
     result: dict[str, Any] = {
         "status": "recorded",
@@ -185,8 +186,115 @@ def record_iteration(
         "iterationsRemaining": remaining,
         "overLimit": over_limit,
         "deltas": deltas,
+        "progress": progress_eval,
     }
     if max_iterations_ignored:
         result["maxIterationsIgnored"] = True
 
     return result
+
+
+def evaluate_progress(
+    state: dict[str, Any],
+    stall_window: int = 2,
+) -> dict[str, Any]:
+    """Evaluate refinement progress, regressions, stall condition, and stop reasons.
+
+    AGENT PROPOSAL: Stall detection window (N=2), regression tracking rules,
+    and stop reasons ("blocked", "no_differences", "limit_reached", "stalled")
+    are proposals pending open questions Q1 and Q8.
+
+    Args:
+        state: Parsed dictionary from iterations.json.
+        stall_window: Number of consecutive non-decreasing transitions required to trigger stalled (default: 2).
+
+    Returns:
+        Dictionary containing:
+        - "totalDifferingPixels": List of per-iteration total differing pixels over COMPARED references only.
+        - "regressions": List of regression entries for the latest iteration vs previous:
+          [{"id": str, "kind": "worse" | "failed", ["pixelsDelta": int]}].
+        - "stalled": Boolean indicating if total did not decrease for at least stall_window consecutive iterations.
+        - "stallWindow": Configured stall window integer.
+        - "stopReason": Precedence-evaluated reason string or None.
+        - "stopIsSuccess": Always False (spec §8.4: stop condition is not a success condition).
+    """
+    if not isinstance(state, dict):
+        raise ValueError("state must be a dictionary")
+    if not isinstance(stall_window, int) or isinstance(stall_window, bool) or stall_window < 1:
+        raise ValueError(f"stall_window must be an integer >= 1, got {stall_window!r}")
+
+    iterations = state.get("iterations", [])
+    max_iterations = state.get("maxIterations", 5)
+
+    totals: list[int] = []
+    for it in iterations:
+        refs = it.get("references", {})
+        tot = sum(
+            r["differingPixels"]
+            for r in refs.values()
+            if r.get("status") == "compared" and "differingPixels" in r
+        )
+        totals.append(tot)
+
+    regressions: list[dict[str, Any]] = []
+    if len(iterations) >= 2:
+        prev_refs = iterations[-2].get("references", {})
+        curr_refs = iterations[-1].get("references", {})
+
+        for ref_id in sorted(curr_refs.keys()):
+            curr_info = curr_refs[ref_id]
+            if ref_id in prev_refs:
+                prev_info = prev_refs[ref_id]
+                p_st = prev_info.get("status")
+                c_st = curr_info.get("status")
+
+                if p_st == "compared" and c_st == "failed":
+                    regressions.append({"id": ref_id, "kind": "failed"})
+                elif p_st == "compared" and c_st == "compared":
+                    c_pix = curr_info.get("differingPixels", 0)
+                    p_pix = prev_info.get("differingPixels", 0)
+                    pix_delta = c_pix - p_pix
+                    if pix_delta > 0:
+                        regressions.append({
+                            "id": ref_id,
+                            "kind": "worse",
+                            "pixelsDelta": pix_delta,
+                        })
+
+    stalled = False
+    if len(totals) >= stall_window + 1:
+        window_totals = totals[-(stall_window + 1):]
+        if not all(t == 0 for t in window_totals):
+            stalled = all(
+                window_totals[i] >= window_totals[i - 1]
+                for i in range(1, len(window_totals))
+            )
+
+    stop_reason: str | None = None
+    if iterations:
+        latest_it = iterations[-1]
+        latest_refs = latest_it.get("references", {})
+        latest_num = latest_it.get("number", len(iterations))
+        latest_total = totals[-1]
+
+        # Reason precedence: blocked > no_differences > limit_reached > stalled > null
+        any_failed = any(r.get("status") != "compared" for r in latest_refs.values())
+        if any_failed:
+            stop_reason = "blocked"
+        elif latest_refs and all(r.get("status") == "compared" for r in latest_refs.values()) and latest_total == 0:
+            stop_reason = "no_differences"
+        elif latest_num >= max_iterations:
+            stop_reason = "limit_reached"
+        elif stalled:
+            stop_reason = "stalled"
+        else:
+            stop_reason = None
+
+    return {
+        "totalDifferingPixels": totals,
+        "regressions": regressions,
+        "stalled": stalled,
+        "stallWindow": stall_window,
+        "stopReason": stop_reason,
+        "stopIsSuccess": False,
+    }

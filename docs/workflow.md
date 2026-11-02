@@ -62,9 +62,19 @@ This document details the mandatory 8-step visual reconstruction workflow define
 
 - **What the agent does:** Analyzes comparison findings to locate root causes of visual defects. Fixes problems in priority order: missing sections, structural layout, alignment, shared components, image crops, typography, and styling details. Applies minimal code edits, recaptures affected routes, and checks for regressions across shared components. Stops at iteration limit or when improvements stall.
 - **Which command supports it today:**
-  `pixelproof iterate --manifest PATH --actual-dir DIR --out DIR [--overwrite]` (or `python -m pixelproof_image.cli iterate ...`)
-  Records one refinement iteration and evaluates progress (MAE and differing pixels deltas) relative to the previous iteration under `<out>/state/iterations.json`.
-- **What is NOT BUILT YET:** Autonomous refinement loop, progress stall detector, regression stop decisions, and the unified `pixelproof run` command are NOT BUILT YET (Step 25 / Phase 3).
+  - `pixelproof iterate --manifest PATH --actual-dir DIR --out DIR [--overwrite]` (or `python -m pixelproof_image.cli iterate ...`): Records one refinement iteration and evaluates progress (MAE and differing pixels deltas) relative to the previous iteration under `<out>/state/iterations.json`.
+  - `pixelproof progress --state PATH [--stall-window N]` (or `python -m pixelproof_image.cli progress ...`): Read-only command evaluating refinement progress, regressions, stall conditions, and stop reasons.
+- **Evaluation Rules & Precedence (§8.1, §8.4):**
+  1. **Stall Detection:** Stalled when the total differing pixels do not decrease across at least `stall_window` (default 2) consecutive iterations (requires $\text{stall\_window} + 1$ iterations of history). If totals are all zero, it is `no_differences`, not stalled.
+  2. **Regression Tracking:** Reports any reference in the latest iteration that got worse (increased differing pixels) or failed (compared previously, failed now).
+  3. **Stop Reason Precedence (first match wins):**
+     - `blocked`: Any reference failed in the latest iteration.
+     - `no_differences`: All references compared and total differing pixels == 0.
+     - `limit_reached`: Latest iteration number >= `maxIterations`.
+     - `stalled`: Stall condition triggered.
+     - `null`: No stop reason met; continue refinement.
+  4. **Stop is Not Success (§8.4):** `stopIsSuccess` is always `false`. Reaching a stop condition ceases iteration; it does not declare the visual output bug-free or successful.
+- **What is NOT BUILT YET:** The autonomous multi-iteration refinement loop (`pixelproof run`), automatic code-fix application, and automated evidence publishing remain NOT BUILT YET (Phase 3/4).
 
 ---
 

@@ -62,6 +62,75 @@
           }
         }
       }
+    },
+    "progress": {
+      "type": "object",
+      "required": [
+        "totalDifferingPixels",
+        "regressions",
+        "stalled",
+        "stallWindow",
+        "stopReason",
+        "stopIsSuccess"
+      ],
+      "properties": {
+        "totalDifferingPixels": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "regressions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "kind"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "worse",
+                  "failed"
+                ]
+              },
+              "pixelsDelta": {
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "stalled": {
+          "type": "boolean"
+        },
+        "stallWindow": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "stopReason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "limit_reached",
+            "stalled",
+            "blocked",
+            "no_differences",
+            null
+          ]
+        },
+        "stopIsSuccess": {
+          "type": "boolean",
+          "const": false
+        }
+      }
     }
   }
 }
