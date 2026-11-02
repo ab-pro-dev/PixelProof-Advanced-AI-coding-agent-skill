@@ -38,6 +38,7 @@ Run the automated test suite:
 ## Installation
 
 See [docs/install.md](docs/install.md) for step-by-step setup instructions on Linux, macOS, and Windows.
+See [docs/decisions.md](docs/decisions.md) for owner-delegated decisions resolving architectural questions Q1 to Q9.
 
 ## Available CLI Commands
 
