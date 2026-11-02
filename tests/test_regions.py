@@ -749,22 +749,67 @@ def test_weights_schema_accepts_and_rejects(report_schema: dict, tmp_path: Path)
 
 def test_priority_score_and_factors(tmp_path: Path):
     """Verify priorityScore == weightedScore, priorityScore == A*S*V, R is None, and absent without weights."""
-    p_ref, p_act = tmp_path / "ref_p.png", tmp_path / "act_p.png"
-    Image.new("RGB", (20, 20), "red").save(p_ref)
-    act = Image.new("RGB", (20, 20), "red")
-    act.putpixel((0, 0), (0, 255, 0))
-    act.save(p_act)
-    w_data = {"grid": {"rows": 2, "cols": 2}, "weights": [[5.0, 1.0], [1.0, 1.0]]}
-    rep_w = run_comparison("pw", p_ref, p_act, tmp_path / "ow", regions=True, grid="2x2", region_weights=w_data)
+    p_ref = tmp_path / "ref_p.png"
+    p_act = tmp_path / "act_p.png"
+    ref_img = Image.new("RGB", (200, 160), (128, 128, 128))
+    act_img = Image.new("RGB", (200, 160), (128, 128, 128))
+    # Cell 0 (index 0, row 0, col 0): 10x10 block = 100 pixels
+    for y in range(10):
+        for x in range(10):
+            act_img.putpixel((x, y), (255, 255, 255))
+    # Cell 5 (index 5, row 1, col 1): 20x20 block = 400 pixels
+    for y in range(40, 60):
+        for x in range(50, 70):
+            act_img.putpixel((x, y), (255, 255, 255))
+    ref_img.save(p_ref)
+    act_img.save(p_act)
+
+    weights_matrix = [[1.0] * 4 for _ in range(4)]
+    weights_matrix[0][0] = 5.0
+    weights_data = {
+        "grid": {"rows": 4, "cols": 4},
+        "weights": weights_matrix,
+    }
+
+    # 1. Comparison with weights
+    rep_w = run_comparison(
+        reference_id="test_p_weighted",
+        reference_path=p_ref,
+        actual_path=p_act,
+        output_dir=tmp_path / "out_p_weighted",
+        regions=True,
+        grid="4x4",
+        region_weights=weights_data,
+    )
     assert rep_w["status"] == "compared"
-    item = rep_w["regions"]["weighted"]["ranking"][0]
-    assert item["priorityScore"] == item["weightedScore"]
-    assert item["factors"]["R"] is None
-    assert math.isclose(item["priorityScore"], item["factors"]["A"] * item["factors"]["S"] * item["factors"]["V"], abs_tol=1e-15)
-    rep_u = run_comparison("pu", p_ref, p_act, tmp_path / "ou", regions=True, grid="2x2")
-    assert "weighted" not in rep_u["regions"]
-    assert "priorityScore" not in json.dumps(rep_u)
-    assert "factors" not in json.dumps(rep_u)
+    weighted_ranking = rep_w["regions"]["weighted"]["ranking"]
+    assert len(weighted_ranking) == 2
+
+    for item in weighted_ranking:
+        # priorityScore == weightedScore exactly (same float)
+        assert item["priorityScore"] == item["weightedScore"]
+        # factors present and R is None (null in JSON)
+        factors = item["factors"]
+        assert factors["R"] is None
+        # priorityScore == A * S * V recomputed within 1e-15
+        recomputed = factors["A"] * factors["S"] * factors["V"]
+        assert math.isclose(item["priorityScore"], recomputed, abs_tol=1e-15)
+
+    # 2. Comparison without weights
+    rep_unweighted = run_comparison(
+        reference_id="test_p_unweighted",
+        reference_path=p_ref,
+        actual_path=p_act,
+        output_dir=tmp_path / "out_p_unweighted",
+        regions=True,
+        grid="4x4",
+        region_weights=None,
+    )
+    assert rep_unweighted["status"] == "compared"
+    assert "weighted" not in rep_unweighted["regions"]
+    dumped = json.dumps(rep_unweighted)
+    assert "priorityScore" not in dumped
+    assert "factors" not in dumped
 
 
 
