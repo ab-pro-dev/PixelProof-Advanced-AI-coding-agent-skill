@@ -4,9 +4,9 @@ PixelProof is an AI coding-agent skill and deterministic visual verification too
 
 ## Current Status
 
-Phase 1 complete except Phase 2+ features.
+Phases 1 and 2 done; Phase 3 evidence tools done; agent loop instructions in SKILL.md.
 
-The Phase 1 visual comparison engine, read-only project inspector, manifest validator, and report generator are implemented in Python. Features planned for subsequent phases—including browser automation with Playwright (`capture`), perceptual SSIM, region-based comparison, automated issue ranking, and the autonomous multi-iteration refinement loop (`run`)—are NOT BUILT YET (Phase 2/3).
+The Phase 1 comparison engine, read-only project inspector, manifest validator, and report generator are fully implemented, along with Phase 2 Playwright browser capture and Phase 3 refinement iteration state tracking, delta calculations, region grid metrics, priority scoring, and stall/regression/stop-reason evaluation. Planned future features—including project initialization (`init`), perceptual SSIM, DOM geometry checks, and the autonomous multi-iteration refinement loop (`run`)—are NOT BUILT YET (Phase 3/4).
 
 ## Run the Demo
 
