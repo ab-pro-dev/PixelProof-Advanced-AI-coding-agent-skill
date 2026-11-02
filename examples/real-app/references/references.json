@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "project": {
+    "name": "pixelproof-real-app",
+    "baseUrl": "http://127.0.0.1:5173"
+  },
+  "references": [
+    {
+      "id": "home-desktop",
+      "route": "/",
+      "captureType": "viewport",
+      "viewport": { "width": 1280, "height": 720 },
+      "deviceScaleFactor": 1,
+      "image": "home-desktop.png",
+      "notes": "Reference PNG is NOT committed; generate it by running the capture CLI against the dev server."
+    },
+    {
+      "id": "dashboard-desktop",
+      "route": "/dashboard",
+      "captureType": "viewport",
+      "viewport": { "width": 1280, "height": 720 },
+      "deviceScaleFactor": 1,
+      "image": "dashboard-desktop.png",
+      "notes": "Reference PNG is NOT committed; generate it by running the capture CLI against the dev server."
+    }
+  ]
+}

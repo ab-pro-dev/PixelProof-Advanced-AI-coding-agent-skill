@@ -111,3 +111,13 @@ PixelProof maintains JSON Schema (2020-12) contracts for manifest inputs, compar
 - `schemas/comparison-report.schema.json`: Contract for visual comparison tool outputs (`compared` and `failed` results).
 - `schemas/config.schema.json`: Contract for run configuration options (validating `config/default.json`; marked NOT BUILT YET pending Phase 3).
 
+## Real App Test
+
+`examples/real-app/` is a minimal Vite + React application with two routes for manual end-to-end testing against the PixelProof CLI:
+
+```bash
+cd examples/real-app && npm install && npm run dev
+# In another terminal:
+pixelproof capture --manifest examples/real-app/references/references.json --out /tmp/real-app-out
+```
+
