@@ -98,6 +98,8 @@ Required flags:
   --out <dir>         Output directory for comparison artifacts
 
 Options:
+  --regions           Include region-based comparison measurements
+  --grid <RxC>        Grid dimensions for regions (default: 4x4)
   --overwrite         Overwrite existing comparison artifacts
   --python <cmd>      Python executable command or path (default: python)
   --help, -h          Show help for compare command
@@ -257,6 +259,8 @@ const COMPARE_OPTIONS = {
   actual: { type: "string" },
   out: { type: "string" },
   overwrite: { type: "boolean" },
+  regions: { type: "boolean" },
+  grid: { type: "string" },
   python: { type: "string" },
 } as const;
 
@@ -268,6 +272,8 @@ async function runCompare(args: string[]): Promise<void> {
     actual?: string;
     out?: string;
     overwrite?: boolean;
+    regions?: boolean;
+    grid?: string;
     python?: string;
   };
   let positionals: string[];
@@ -319,6 +325,12 @@ async function runCompare(args: string[]): Promise<void> {
   ];
   if (values.overwrite) {
     cliArgs.push("--overwrite");
+  }
+  if (values.regions) {
+    cliArgs.push("--regions");
+  }
+  if (values.grid) {
+    cliArgs.push("--grid", values.grid);
   }
 
   const res = await runPythonCli(cliArgs, {

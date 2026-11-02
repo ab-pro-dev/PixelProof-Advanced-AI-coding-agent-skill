@@ -250,6 +250,73 @@ describe("TypeScript CLI wrappers (compare & report)", () => {
     assert.strictEqual(tsStdout, pyStdout);
   });
 
+  test("wrapper stdout byte-identical to Python CLI for compare --regions", async () => {
+    const outTs = path.join(tmpDir, "out_byte_reg_ts");
+    const outPy = path.join(tmpDir, "out_byte_reg_py");
+
+    const { stdout: tsStdout, code: tsCode } = await runCli([
+      "compare",
+      "--id",
+      "byte-reg",
+      "--reference",
+      imgIdentical1,
+      "--actual",
+      imgIdentical2,
+      "--out",
+      outTs,
+      "--regions",
+      "--grid",
+      "2x2",
+    ]);
+    assert.strictEqual(tsCode, 0);
+
+    const pyRes = await execFileAsync("python", [
+      "-m",
+      "pixelproof_image.cli",
+      "compare",
+      "--id",
+      "byte-reg",
+      "--reference",
+      imgIdentical1,
+      "--actual",
+      imgIdentical2,
+      "--out",
+      outPy,
+      "--regions",
+      "--grid",
+      "2x2",
+    ]);
+
+    assert.strictEqual(tsStdout, pyRes.stdout);
+    const parsed = JSON.parse(tsStdout);
+    assert(parsed.regions);
+    assert.strictEqual(parsed.regions.grid.rows, 2);
+    assert.strictEqual(parsed.regions.grid.cols, 2);
+    assert.strictEqual(parsed.regions.items.length, 4);
+  });
+
+  test("wrapper compare with invalid --grid exits 1 with invalid_grid", async () => {
+    const outTs = path.join(tmpDir, "out_bad_grid");
+    const { stdout, code } = await runCli([
+      "compare",
+      "--id",
+      "test-bad-grid",
+      "--reference",
+      imgIdentical1,
+      "--actual",
+      imgIdentical2,
+      "--out",
+      outTs,
+      "--regions",
+      "--grid",
+      "0x4",
+    ]);
+    assert.strictEqual(code, 1);
+    const parsed = JSON.parse(stdout);
+    assert.strictEqual(parsed.status, "failed");
+    assert.strictEqual(parsed.error?.code, "invalid_grid");
+  });
+
   test("calling setDefaultBrowserLauncher with NODE_ENV unset throws", () => {
     const prev = process.env.NODE_ENV;
     delete process.env.NODE_ENV;

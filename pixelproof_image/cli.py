@@ -23,6 +23,7 @@ import sys
 from pixelproof_image.final_report import build_report, write_report
 from pixelproof_image.inspect_project import inspect_project
 from pixelproof_image.manifest import validate_manifest
+from pixelproof_image.regions import parse_grid
 from pixelproof_image.report import run_comparison
 
 
@@ -66,6 +67,17 @@ def main(argv: list[str] | None = None) -> None:
         action="store_true",
         default=False,
         help="Overwrite existing comparison artifacts.",
+    )
+    compare_parser.add_argument(
+        "--regions",
+        action="store_true",
+        default=False,
+        help="Include region-based measurements in comparison report.",
+    )
+    compare_parser.add_argument(
+        "--grid",
+        default=None,
+        help="Grid dimensions RxC for regions (default: 4x4).",
     )
 
     # 2. Validate subcommand
@@ -118,12 +130,30 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
 
     if args.command == "compare":
+        grid_arg = args.grid if args.grid is not None else "4x4"
+        if args.regions or args.grid is not None:
+            try:
+                parse_grid(grid_arg)
+            except ValueError as err:
+                fail_report = {
+                    "referenceId": args.reference_id,
+                    "status": "failed",
+                    "error": {
+                        "code": "invalid_grid",
+                        "message": str(err),
+                    },
+                }
+                sys.stdout.write(json.dumps(fail_report, indent=2) + "\n")
+                sys.exit(1)
+
         report = run_comparison(
             reference_id=args.reference_id,
             reference_path=args.reference,
             actual_path=args.actual,
             output_dir=args.output_dir,
             overwrite=args.overwrite,
+            regions=args.regions,
+            grid=grid_arg,
         )
         sys.stdout.write(json.dumps(report, indent=2) + "\n")
         sys.exit(0 if report.get("status") == "compared" else 1)

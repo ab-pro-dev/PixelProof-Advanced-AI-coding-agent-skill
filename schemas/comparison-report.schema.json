@@ -84,6 +84,93 @@
         },
         "issues": {
           "type": "array"
+        },
+        "regions": {
+          "type": "object",
+          "required": ["grid", "items"],
+          "properties": {
+            "grid": {
+              "type": "object",
+              "required": ["rows", "cols"],
+              "properties": {
+                "rows": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "cols": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "index",
+                  "row",
+                  "col",
+                  "x",
+                  "y",
+                  "width",
+                  "height",
+                  "areaFraction",
+                  "differingPixels",
+                  "diffRatio",
+                  "mae"
+                ],
+                "properties": {
+                  "index": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "row": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "col": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "x": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "y": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "width": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "height": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "areaFraction": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "differingPixels": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "diffRatio": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "mae": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -110,12 +197,14 @@
           }
         },
         "metrics": false,
-        "artifacts": false
+        "artifacts": false,
+        "regions": false
       },
       "not": {
         "anyOf": [
           { "required": ["metrics"] },
-          { "required": ["artifacts"] }
+          { "required": ["artifacts"] },
+          { "required": ["regions"] }
         ]
       }
     }

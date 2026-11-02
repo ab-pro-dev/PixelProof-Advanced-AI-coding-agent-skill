@@ -18,8 +18,9 @@ from pathlib import Path
 import re
 from typing import Any, Union
 
-from pixelproof_image.compare import compare_images
+from pixelproof_image.compare import compare_images, load_image
 from pixelproof_image.overlay import make_diff, make_overlay, make_side_by_side
+from pixelproof_image.regions import compute_regions, parse_grid
 
 # Allowed reference IDs: alphanumeric, underscores, hyphens, 1 to 64 characters
 REFERENCE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
@@ -39,6 +40,8 @@ def run_comparison(
     actual_path: Union[str, os.PathLike],
     output_dir: Union[str, os.PathLike],
     overwrite: bool = False,
+    regions: bool = False,
+    grid: tuple[int, int] | str = (4, 4),
 ) -> dict[str, Any]:
     """Run visual comparison and generate artifacts for a single reference.
 
@@ -88,6 +91,21 @@ def run_comparison(
                 ),
             },
         }
+
+    # Validate grid specification if regions are requested or grid is customized
+    parsed_rows, parsed_cols = 4, 4
+    if regions or (grid != (4, 4) and grid != "4x4"):
+        try:
+            parsed_rows, parsed_cols = parse_grid(grid)
+        except ValueError as err:
+            return {
+                "referenceId": reference_id,
+                "status": "failed",
+                "error": {
+                    "code": "invalid_grid",
+                    "message": str(err),
+                },
+            }
 
     # 2. SECURITY (§17): Validate file paths stay inside output_dir
     out_dir = Path(output_dir)
@@ -198,7 +216,7 @@ def run_comparison(
         }
 
     # 6. Success: return formatted report matching spec §7.7
-    return {
+    report: dict[str, Any] = {
         "referenceId": reference_id,
         "status": "compared",
         "referenceSize": comp_res["referenceSize"],
@@ -214,3 +232,19 @@ def run_comparison(
         "differingPixels": diff_res["differingPixels"],
         "issues": [],
     }
+
+    if regions:
+        ref_arr, ref_size, _ = load_image(reference_path)
+        act_arr, act_size, _ = load_image(actual_path)
+        region_items = compute_regions(ref_arr, act_arr, rows=parsed_rows, cols=parsed_cols)
+        effective_rows = max(1, min(parsed_rows, ref_size.height))
+        effective_cols = max(1, min(parsed_cols, ref_size.width))
+        report["regions"] = {
+            "grid": {
+                "rows": effective_rows,
+                "cols": effective_cols,
+            },
+            "items": region_items,
+        }
+
+    return report
