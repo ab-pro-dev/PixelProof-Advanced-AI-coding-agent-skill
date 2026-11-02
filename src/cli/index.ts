@@ -16,6 +16,7 @@
 import { parseArgs } from "node:util";
 import { captureFromManifest } from "../browser/capture-manifest.js";
 import type { WaitUntilStrategy } from "../browser/capture.js";
+import { checkEnvironment, formatHumanReport } from "../core/check-environment.js";
 import { runPythonCli } from "../core/manifest.js";
 
 const VALID_WAIT_UNTIL = new Set(["load", "domcontentloaded", "networkidle"]);
@@ -46,6 +47,7 @@ Available Commands:
   report     Build and write final report files (JSON and Markdown)
   iterate    Record one refinement iteration and compute deltas vs previous iteration
   progress   Evaluate iteration progress, regressions, and stop reasons
+  doctor     Check runtime environment, dependencies, and browser capabilities
 
 Options:
   --help, -h Show help for pixelproof
@@ -160,6 +162,20 @@ Options:
   --stall-window <n>    Number of consecutive iterations required to detect stall (default: 2)
   --python <cmd>        Python executable command or path (default: python)
   --help, -h            Show help for progress command
+`);
+  process.exit(0);
+}
+
+function printDoctorHelp(): void {
+  console.log(`Evaluate runtime environment and dependencies against specification requirements.
+
+Usage:
+  pixelproof doctor [options]
+
+Options:
+  --json          Output full diagnostics as JSON document
+  --python <cmd>  Python executable command or path (default: python)
+  --help, -h      Show help for doctor command
 `);
   process.exit(0);
 }
@@ -594,6 +610,54 @@ async function runProgress(args: string[]): Promise<void> {
   process.exit(res.exitCode);
 }
 
+const DOCTOR_OPTIONS = {
+  help: { type: "boolean", short: "h" },
+  json: { type: "boolean" },
+  python: { type: "string" },
+} as const;
+
+async function runDoctor(args: string[]): Promise<void> {
+  let values: {
+    help?: boolean;
+    json?: boolean;
+    python?: string;
+  };
+  let positionals: string[];
+
+  try {
+    const parsed = parseArgs({
+      args,
+      options: DOCTOR_OPTIONS,
+      allowPositionals: true,
+      strict: true,
+    });
+    values = parsed.values;
+    positionals = parsed.positionals;
+  } catch (err: any) {
+    printUsageError(err?.message ?? String(err));
+  }
+
+  if (values.help) {
+    printDoctorHelp();
+  }
+
+  if (positionals.length > 0) {
+    printUsageError(`Unexpected positional argument(s): ${positionals.join(", ")}`);
+  }
+
+  const report = await checkEnvironment({
+    pythonCmd: values.python,
+  });
+
+  if (values.json) {
+    console.log(JSON.stringify(report, null, 2));
+  } else {
+    process.stdout.write(formatHumanReport(report));
+  }
+
+  process.exit(report.allRequiredPassed ? 0 : 1);
+}
+
 const CAPTURE_OPTIONS = {
   help: { type: "boolean", short: "h" },
   manifest: { type: "string" },
@@ -695,7 +759,7 @@ async function main(): Promise<void> {
 
   if (rawArgs.length === 0) {
     printUsageError(
-      "Missing required command. Supported commands: validate, inspect, capture, compare, report, iterate, progress. Use --help for usage."
+      "Missing required command. Supported commands: validate, inspect, capture, compare, report, iterate, progress, doctor. Use --help for usage."
     );
   }
 
@@ -740,8 +804,13 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (firstArg === "doctor") {
+    await runDoctor(rawArgs.slice(1));
+    return;
+  }
+
   printUsageError(
-    `Unknown command: '${firstArg}'. Supported commands: validate, inspect, capture, compare, report, iterate, progress.`
+    `Unknown command: '${firstArg}'. Supported commands: validate, inspect, capture, compare, report, iterate, progress, doctor.`
   );
 }
 

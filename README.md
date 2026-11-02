@@ -35,6 +35,10 @@ Run the automated test suite:
   npm test
   ```
 
+## Installation
+
+See [docs/install.md](docs/install.md) for step-by-step setup instructions on Linux, macOS, and Windows.
+
 ## Available CLI Commands
 
 ### TypeScript CLI (`pixelproof`)
@@ -82,6 +86,12 @@ The TypeScript CLI provides automated manifest validation, project inspection, b
    pixelproof progress --state PATH [--stall-window N] [--python CMD]
    ```
    Evaluates iteration progress, regressions, stall conditions, and stop reasons from state file in read-only mode. Stall/regression/stop reasons (AGENT PROPOSAL pending Q1/Q8).
+
+8. **Environment Doctor & Capability Verification:**
+   ```bash
+   pixelproof doctor [--json] [--python CMD]
+   ```
+   Evaluates runtime environment, Node.js version, Python version, required packages, and Chromium launchability against specification requirements (§9.3, §19). See [docs/install.md](docs/install.md) for installation instructions.
 
 Planned TypeScript CLI commands:
 - `pixelproof init`: NOT BUILT YET (Phase 4 / spec §11)

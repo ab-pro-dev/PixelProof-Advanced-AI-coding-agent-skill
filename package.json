@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "doctor": "node ./dist/src/cli/index.js doctor",
     "test": "node --import \"data:text/javascript,process.env.NODE_ENV='test'\" --test \"dist/tests/**/*.test.js\""
   },
   "devDependencies": {
