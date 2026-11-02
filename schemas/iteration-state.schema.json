@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pixelproof.dev/schemas/iteration-state.schema.json",
+  "title": "PixelProof Iteration State Schema",
+  "description": "Schema for machine-readable iterations.json state file tracking refinement iterations and reference measurements",
+  "$comment": "AGENT PROPOSAL: Proposed iteration state schema pending open questions Q1/Q8. Contract only.",
+  "type": "object",
+  "required": [
+    "version",
+    "maxIterations",
+    "iterations"
+  ],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "maxIterations": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "iterations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "number",
+          "timestamp",
+          "references"
+        ],
+        "properties": {
+          "number": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "timestamp": {
+            "type": "string"
+          },
+          "references": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "required": ["status"],
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": ["compared", "failed"]
+                },
+                "mae": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "differingPixels": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "errorCode": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -71,6 +71,12 @@ The TypeScript CLI provides automated manifest validation, project inspection, b
    ```
    Generates machine-readable `report.json` and human-readable `report.md` covering all specification sections.
 
+6. **Refinement Iteration Tracking:**
+   ```bash
+   pixelproof iterate --manifest PATH --actual-dir DIR --out DIR [--overwrite] [--python CMD]
+   ```
+   Records one refinement iteration and evaluates progress (MAE and differing pixels deltas) relative to the previous iteration under `<out>/state/iterations.json`. Iteration state + deltas, agent-driven (AGENT PROPOSAL pending Q1/Q8).
+
 Planned TypeScript CLI commands:
 - `pixelproof init`: NOT BUILT YET (Phase 4 / spec §11)
 - `pixelproof run`: NOT BUILT YET (Phase 3 / spec §11)
@@ -103,12 +109,19 @@ Phase 1 tools are invoked via the Python CLI (`pixelproof_image.cli`):
    ```
    Generates machine-readable `report.json` and human-readable `report.md` covering all 10 specification sections and enforcing honest completion reporting.
 
+5. **Refinement Iteration Tracking:**
+   ```bash
+   python -m pixelproof_image.cli iterate --manifest PATH --actual-dir DIR --out DIR [--overwrite]
+   ```
+   Records one refinement iteration and evaluates progress (MAE and differing pixels deltas) relative to the previous iteration under `<out>/state/iterations.json`. Iteration state + deltas, agent-driven (AGENT PROPOSAL pending Q1/Q8).
+
 ## Schemas
 
 PixelProof maintains JSON Schema (2020-12) contracts for manifest inputs, comparison outputs, and run configurations:
 
 - `schemas/references.schema.json`: Contract for input reference manifests (`references.json`), including optional owner-supplied `regionWeights` (`grid` and `weights` matrix).
 - `schemas/comparison-report.schema.json`: Contract for visual comparison tool outputs (`compared` and `failed` results).
+- `schemas/iteration-state.schema.json`: Contract for refinement iteration state files (`iterations.json`).
 - `schemas/config.schema.json`: Contract for run configuration options (validating `config/default.json`; marked NOT BUILT YET pending Phase 3).
 
 ## Real App Test

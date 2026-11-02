@@ -22,6 +22,7 @@ import sys
 
 from pixelproof_image.final_report import build_report, write_report
 from pixelproof_image.inspect_project import inspect_project
+from pixelproof_image.iteration import record_iteration
 from pixelproof_image.manifest import validate_manifest
 from pixelproof_image.regions import parse_grid, validate_region_weights
 from pixelproof_image.report import run_comparison
@@ -130,6 +131,34 @@ def main(argv: list[str] | None = None) -> None:
         action="store_true",
         default=False,
         help="Overwrite existing report files.",
+    )
+
+    # 5. Iterate subcommand
+    iterate_parser = subparsers.add_parser(
+        "iterate",
+        help="Record one refinement iteration and report deltas vs the previous iteration.",
+    )
+    iterate_parser.add_argument(
+        "--manifest",
+        required=True,
+        help="Path to reference manifest JSON file.",
+    )
+    iterate_parser.add_argument(
+        "--actual-dir",
+        required=True,
+        help="Directory containing actual screenshots (<id>.png).",
+    )
+    iterate_parser.add_argument(
+        "--out",
+        required=True,
+        dest="output_dir",
+        help="Base output directory for comparison artifacts and state/.",
+    )
+    iterate_parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        default=False,
+        help="Overwrite existing comparison artifacts.",
     )
 
     args = parser.parse_args(argv)
@@ -277,6 +306,88 @@ def main(argv: list[str] | None = None) -> None:
             }
             sys.stdout.write(json.dumps(err_res, indent=2) + "\n")
             sys.exit(1)
+
+    if args.command == "iterate":
+        manifest_res = validate_manifest(args.manifest)
+        if manifest_res.get("status") != "valid":
+            fail_report = {
+                "status": "failed",
+                "error": {
+                    "code": "manifest_invalid",
+                    "message": "Manifest validation failed",
+                    "errors": manifest_res.get("errors", []),
+                },
+            }
+            sys.stdout.write(json.dumps(fail_report, indent=2) + "\n")
+            sys.exit(1)
+
+        references = manifest_res.get("references", [])
+        actual_dir = Path(args.actual_dir)
+        out_dir = Path(args.output_dir)
+
+        run_results = []
+        for ref in references:
+            ref_id = ref["id"]
+            ref_path = ref["image"]
+            actual_path = actual_dir / f"{ref_id}.png"
+            res = run_comparison(
+                reference_id=ref_id,
+                reference_path=ref_path,
+                actual_path=actual_path,
+                output_dir=out_dir,
+                overwrite=args.overwrite,
+                regions=False,
+            )
+            run_results.append(res)
+
+        state_dir = out_dir / "state"
+        record_res = record_iteration(
+            state_dir=state_dir,
+            run_results=run_results,
+            max_iterations=5,
+            overwrite=args.overwrite,
+        )
+
+        if record_res.get("status") != "recorded":
+            sys.stdout.write(json.dumps(record_res, indent=2) + "\n")
+            sys.exit(1)
+
+        compact_refs = []
+        failed_count = 0
+        for r in run_results:
+            st = r.get("status")
+            if st == "compared":
+                compact_refs.append({
+                    "id": r["referenceId"],
+                    "status": "compared",
+                    "mae": r["metrics"]["mae"],
+                    "differingPixels": r["differingPixels"],
+                })
+            else:
+                failed_count += 1
+                err = r.get("error", {})
+                code = err.get("code") if isinstance(err, dict) else str(err)
+                compact_refs.append({
+                    "id": r["referenceId"],
+                    "status": "failed",
+                    "errorCode": code or "unknown_error",
+                })
+
+        cli_doc: dict[str, Any] = {
+            "status": "recorded",
+            "iteration": record_res["iteration"],
+            "iterationsRemaining": record_res["iterationsRemaining"],
+            "overLimit": record_res.get("overLimit", False),
+            "deltas": record_res["deltas"],
+            "references": compact_refs,
+        }
+        if "maxIterationsIgnored" in record_res:
+            cli_doc["maxIterationsIgnored"] = record_res["maxIterationsIgnored"]
+        if failed_count > 0:
+            cli_doc["failedReferences"] = failed_count
+
+        sys.stdout.write(json.dumps(cli_doc, indent=2) + "\n")
+        sys.exit(0 if failed_count == 0 else 1)
 
 
 if __name__ == "__main__":

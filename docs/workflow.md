@@ -61,8 +61,10 @@ This document details the mandatory 8-step visual reconstruction workflow define
 ## 7. Step 07: Refine and Repeat
 
 - **What the agent does:** Analyzes comparison findings to locate root causes of visual defects. Fixes problems in priority order: missing sections, structural layout, alignment, shared components, image crops, typography, and styling details. Applies minimal code edits, recaptures affected routes, and checks for regressions across shared components. Stops at iteration limit or when improvements stall.
-- **Which command supports it today:** Performed manually by the AI agent by repeating code edits and `compare` commands.
-- **What is NOT BUILT YET:** Automated multi-iteration refinement loop, progress stall detector, regression prevention engine, and the autonomous `pixelproof run` command are NOT BUILT YET (Phase 3).
+- **Which command supports it today:**
+  `pixelproof iterate --manifest PATH --actual-dir DIR --out DIR [--overwrite]` (or `python -m pixelproof_image.cli iterate ...`)
+  Records one refinement iteration and evaluates progress (MAE and differing pixels deltas) relative to the previous iteration under `<out>/state/iterations.json`.
+- **What is NOT BUILT YET:** Autonomous refinement loop, progress stall detector, regression stop decisions, and the unified `pixelproof run` command are NOT BUILT YET (Step 25 / Phase 3).
 
 ---
 

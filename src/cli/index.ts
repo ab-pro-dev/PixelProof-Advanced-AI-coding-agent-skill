@@ -44,6 +44,7 @@ Available Commands:
   capture    Capture screenshots for all references registered in a manifest
   compare    Compare reference and actual images and output comparison artifacts
   report     Build and write final report files (JSON and Markdown)
+  iterate    Record one refinement iteration and compute deltas vs previous iteration
 
 Options:
   --help, -h Show help for pixelproof
@@ -122,6 +123,25 @@ Options:
   --overwrite       Overwrite existing report files
   --python <cmd>    Python executable command or path (default: python)
   --help, -h        Show help for report command
+`);
+  process.exit(0);
+}
+
+function printIterateHelp(): void {
+  console.log(`Record one refinement iteration and compute deltas vs previous iteration.
+
+Usage:
+  pixelproof iterate --manifest <path> --actual-dir <dir> --out <dir> [options]
+
+Required flags:
+  --manifest <path>    Path to reference manifest JSON file
+  --actual-dir <dir>   Directory containing actual rendered screenshots (<id>.png)
+  --out <dir>          Base output directory for comparison artifacts and state/
+
+Options:
+  --overwrite          Overwrite existing comparison artifacts
+  --python <cmd>       Python executable command or path (default: python)
+  --help, -h           Show help for iterate command
 `);
   process.exit(0);
 }
@@ -418,6 +438,84 @@ async function runReport(args: string[]): Promise<void> {
   process.exit(res.exitCode);
 }
 
+const ITERATE_OPTIONS = {
+  help: { type: "boolean", short: "h" },
+  manifest: { type: "string" },
+  "actual-dir": { type: "string" },
+  out: { type: "string" },
+  overwrite: { type: "boolean" },
+  python: { type: "string" },
+} as const;
+
+async function runIterate(args: string[]): Promise<void> {
+  let values: {
+    help?: boolean;
+    manifest?: string;
+    "actual-dir"?: string;
+    out?: string;
+    overwrite?: boolean;
+    python?: string;
+  };
+  let positionals: string[];
+
+  try {
+    const parsed = parseArgs({
+      args,
+      options: ITERATE_OPTIONS,
+      allowPositionals: true,
+      strict: true,
+    });
+    values = parsed.values;
+    positionals = parsed.positionals;
+  } catch (err: any) {
+    printUsageError(err?.message ?? String(err));
+  }
+
+  if (values.help) {
+    printIterateHelp();
+  }
+
+  if (positionals.length > 0) {
+    printUsageError(`Unexpected positional argument(s): ${positionals.join(", ")}`);
+  }
+
+  if (!values.manifest || values.manifest.trim().length === 0) {
+    printUsageError("Missing required flag: --manifest");
+  }
+  if (!values["actual-dir"] || values["actual-dir"].trim().length === 0) {
+    printUsageError("Missing required flag: --actual-dir");
+  }
+  if (!values.out || values.out.trim().length === 0) {
+    printUsageError("Missing required flag: --out");
+  }
+
+  const cliArgs = [
+    "iterate",
+    "--manifest",
+    values.manifest,
+    "--actual-dir",
+    values["actual-dir"],
+    "--out",
+    values.out,
+  ];
+  if (values.overwrite) {
+    cliArgs.push("--overwrite");
+  }
+
+  const res = await runPythonCli(cliArgs, {
+    pythonCommand: values.python,
+    unavailableCode: "iterate_unavailable",
+  });
+
+  if (res.status === "failed") {
+    console.log(JSON.stringify({ status: "failed", error: res.error }, null, 2));
+    process.exit(1);
+  }
+
+  process.stdout.write(res.stdout);
+  process.exit(res.exitCode);
+}
+
 const CAPTURE_OPTIONS = {
   help: { type: "boolean", short: "h" },
   manifest: { type: "string" },
@@ -519,7 +617,7 @@ async function main(): Promise<void> {
 
   if (rawArgs.length === 0) {
     printUsageError(
-      "Missing required command. Supported commands: validate, inspect, capture, compare, report. Use --help for usage."
+      "Missing required command. Supported commands: validate, inspect, capture, compare, report, iterate. Use --help for usage."
     );
   }
 
@@ -554,8 +652,13 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (firstArg === "iterate") {
+    await runIterate(rawArgs.slice(1));
+    return;
+  }
+
   printUsageError(
-    `Unknown command: '${firstArg}'. Supported commands: validate, inspect, capture, compare, report.`
+    `Unknown command: '${firstArg}'. Supported commands: validate, inspect, capture, compare, report, iterate.`
   );
 }
 

@@ -476,6 +476,66 @@ describe("TypeScript CLI wrappers (compare & report)", () => {
     assert.strictEqual(parsed.error?.code, "invalid_grid");
   });
 
+  test("wrapper stdout byte-identical to Python CLI for iterate", async () => {
+    const iterDir = path.join(tmpDir, "iter_test_byte");
+    fs.mkdirSync(iterDir, { recursive: true });
+    const refPng = path.join(iterDir, "ref.png");
+    const actPng = path.join(iterDir, "ref-iter.png");
+    execSync(
+      `python3 -c "from PIL import Image; Image.new('RGB', (40, 40), 'blue').save('${refPng}'); Image.new('RGB', (40, 40), 'blue').save('${actPng}')"`
+    );
+    const manifestPath = path.join(iterDir, "manifest.json");
+    fs.writeFileSync(
+      manifestPath,
+      JSON.stringify({
+        version: 1,
+        references: [
+          {
+            id: "ref-iter",
+            image: "ref.png",
+            route: "/iter",
+            viewport: { width: 40, height: 40 },
+            captureType: "viewport",
+          },
+        ],
+      })
+    );
+
+    const outTs = path.join(iterDir, "out_ts");
+    const outPy = path.join(iterDir, "out_py");
+
+    const { stdout: tsStdout, code: tsCode } = await runCli([
+      "iterate",
+      "--manifest",
+      manifestPath,
+      "--actual-dir",
+      iterDir,
+      "--out",
+      outTs,
+    ]);
+    assert.strictEqual(tsCode, 0);
+
+    const pyRes = await execFileAsync("python", [
+      "-m",
+      "pixelproof_image.cli",
+      "iterate",
+      "--manifest",
+      manifestPath,
+      "--actual-dir",
+      iterDir,
+      "--out",
+      outPy,
+    ]);
+
+    assert.strictEqual(tsStdout, pyRes.stdout);
+    const parsed = JSON.parse(tsStdout);
+    assert.strictEqual(parsed.status, "recorded");
+    assert.strictEqual(parsed.iteration, 1);
+    assert.strictEqual(parsed.iterationsRemaining, 4);
+    assert.strictEqual(parsed.overLimit, false);
+    assert.deepStrictEqual(parsed.deltas, { "ref-iter": { state: "new" } });
+  });
+
   test("calling setDefaultBrowserLauncher with NODE_ENV unset throws", () => {
     const prev = process.env.NODE_ENV;
     delete process.env.NODE_ENV;
