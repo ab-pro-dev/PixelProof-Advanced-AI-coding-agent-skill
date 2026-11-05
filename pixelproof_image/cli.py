@@ -139,6 +139,7 @@ def main(argv: list[str] | None = None) -> None:
         "iterate",
         help="Record one refinement iteration and report deltas vs the previous iteration.",
     )
+    iterate_parser.add_argument("--max-iterations", type=int, default=5)
     iterate_parser.add_argument(
         "--manifest",
         required=True,
@@ -362,7 +363,7 @@ def main(argv: list[str] | None = None) -> None:
         record_res = record_iteration(
             state_dir=state_dir,
             run_results=run_results,
-            max_iterations=5,
+            max_iterations=args.max_iterations,
             overwrite=args.overwrite,
         )
 

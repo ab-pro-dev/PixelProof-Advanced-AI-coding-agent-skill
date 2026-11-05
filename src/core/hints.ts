@@ -6,6 +6,7 @@
  */
 
 export const HINTS: Record<string, string> = {
+  config_invalid: "Provide valid JSON matching schemas/config.schema.json.",
   artifact_error: "Ensure the destination output directory is writable and adequate disk space is available.",
   base_url_missing: "Provide --base-url on the command line or configure project.baseUrl in references.json.",
   compare_unavailable: "Ensure Python 3.12+ and pixelproof_image are installed and accessible on PATH.",

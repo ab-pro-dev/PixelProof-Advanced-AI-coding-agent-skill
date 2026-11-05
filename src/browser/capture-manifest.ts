@@ -23,6 +23,7 @@ export interface CaptureFromManifestOptions {
   pythonCommand?: string; // default "python" (AGENT PROPOSAL)
   readySelector?: string;
   waitUntil?: WaitUntilStrategy;
+  timeoutMs?: number;
 }
 
 export interface CaptureReferenceResult {
@@ -174,6 +175,7 @@ export async function captureFromManifest(
       overwrite: options.overwrite,
       readySelector: options.readySelector,
       waitUntil: options.waitUntil,
+      timeoutMs: options.timeoutMs,
     });
 
     if (captureRes.status === "captured") {

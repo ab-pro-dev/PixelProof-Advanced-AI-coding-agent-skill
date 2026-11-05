@@ -13,12 +13,15 @@
  *   Environment variables and secrets are never logged.
  */
 
+import { loadConfig } from "../core/config.js";
 import { parseArgs } from "node:util";
 import { captureFromManifest } from "../browser/capture-manifest.js";
 import type { WaitUntilStrategy } from "../browser/capture.js";
 import { checkEnvironment, formatHumanReport } from "../core/check-environment.js";
 import { makeError } from "../core/hints.js";
 import { runPythonCli } from "../core/manifest.js";
+
+let config: ReturnType<typeof loadConfig>;
 
 const VALID_WAIT_UNTIL = new Set(["load", "domcontentloaded", "networkidle"]);
 
@@ -48,6 +51,7 @@ Available Commands:
   doctor     Check runtime environment, dependencies, and browser capabilities
 
 Options:
+  --config <path>    Configuration JSON (default: config/default.json, else built-in defaults)
   --help, -h Show help for pixelproof
 
 Use 'pixelproof <command> --help' for more information about a command.
@@ -65,6 +69,7 @@ Required flags:
   --manifest <path>  Path to reference manifest JSON file
 
 Options:
+  --config <path>    Configuration JSON (default: config/default.json, else built-in defaults)
   --python <cmd>     Python executable command or path (default: python)
   --help, -h         Show help for validate command
 `);
@@ -81,6 +86,7 @@ Required flags:
   --project <dir>  Path to target frontend project directory
 
 Options:
+  --config <path>    Configuration JSON (default: config/default.json, else built-in defaults)
   --python <cmd>   Python executable command or path (default: python)
   --help, -h       Show help for inspect command
 `);
@@ -100,6 +106,7 @@ Required flags:
   --out <dir>         Output directory for comparison artifacts
 
 Options:
+  --config <path>    Configuration JSON (default: config/default.json, else built-in defaults)
   --regions           Include region-based comparison measurements
   --grid <RxC>        Grid dimensions for regions (default: 4x4)
   --weights <path>    Path to JSON file containing regionWeights object
@@ -121,6 +128,7 @@ Required flags:
   --out <dir>       Base directory under which reports/ will be created
 
 Options:
+  --config <path>    Configuration JSON (default: config/default.json, else built-in defaults)
   --overwrite       Overwrite existing report files
   --python <cmd>    Python executable command or path (default: python)
   --help, -h        Show help for report command
@@ -140,6 +148,8 @@ Required flags:
   --out <dir>          Base output directory for comparison artifacts and state/
 
 Options:
+  --config <path>    Configuration JSON (default: config/default.json, else built-in defaults)
+  --max-iterations <n> Maximum iterations (default: config maxIterations, 5)
   --overwrite          Overwrite existing comparison artifacts
   --python <cmd>       Python executable command or path (default: python)
   --help, -h           Show help for iterate command
@@ -157,6 +167,7 @@ Required flags:
   --state <path>        Path to iterations.json state file
 
 Options:
+  --config <path>    Configuration JSON (default: config/default.json, else built-in defaults)
   --stall-window <n>    Number of consecutive iterations required to detect stall (default: 2)
   --python <cmd>        Python executable command or path (default: python)
   --help, -h            Show help for progress command
@@ -171,6 +182,7 @@ Usage:
   pixelproof doctor [options]
 
 Options:
+  --config <path>    Configuration JSON (default: config/default.json, else built-in defaults)
   --json          Output full diagnostics as JSON document
   --python <cmd>  Python executable command or path (default: python)
   --help, -h      Show help for doctor command
@@ -189,10 +201,12 @@ Required flags:
   --out <dir>                  Output directory for captured screenshots
 
 Options:
+  --config <path>    Configuration JSON (default: config/default.json, else built-in defaults)
   --base-url <url>             Target application base URL (localhost only)
   --overwrite                  Overwrite existing output files
+  --timeout-ms <n>            Capture timeout in milliseconds (default: config browser.timeoutMs, 30000)
   --ready-selector <selector>  CSS selector to wait for visibility before capturing
-  --wait-until <strategy>      Navigation wait strategy: load, domcontentloaded, networkidle (default: load)
+  --wait-until <strategy>      Navigation wait strategy: load, domcontentloaded, networkidle (default: config browser.waitUntil, networkidle)
   --python <cmd>               Python executable command or path (default: python)
   --help, -h                   Show help for capture command
 `);
@@ -471,6 +485,7 @@ async function runReport(args: string[]): Promise<void> {
 }
 
 const ITERATE_OPTIONS = {
+  "max-iterations": { type: "string" },
   help: { type: "boolean", short: "h" },
   manifest: { type: "string" },
   "actual-dir": { type: "string" },
@@ -484,6 +499,7 @@ async function runIterate(args: string[]): Promise<void> {
     help?: boolean;
     manifest?: string;
     "actual-dir"?: string;
+    "max-iterations"?: string;
     out?: string;
     overwrite?: boolean;
     python?: string;
@@ -521,8 +537,10 @@ async function runIterate(args: string[]): Promise<void> {
     printUsageError("Missing required flag: --out");
   }
 
+  const maxIterations = positiveFlag(values["max-iterations"], config.maxIterations);
   const cliArgs = [
     "iterate",
+    "--max-iterations", String(maxIterations),
     "--manifest",
     values.manifest,
     "--actual-dir",
@@ -657,6 +675,7 @@ async function runDoctor(args: string[]): Promise<void> {
 }
 
 const CAPTURE_OPTIONS = {
+  "timeout-ms": { type: "string" },
   help: { type: "boolean", short: "h" },
   manifest: { type: "string" },
   out: { type: "string" },
@@ -676,6 +695,7 @@ async function runCapture(args: string[]): Promise<void> {
     overwrite?: boolean;
     "ready-selector"?: string;
     "wait-until"?: string;
+    "timeout-ms"?: string;
     python?: string;
   };
   let positionals: string[];
@@ -715,6 +735,7 @@ async function runCapture(args: string[]): Promise<void> {
     );
   }
 
+  const timeoutMs = positiveFlag(values["timeout-ms"], config.browser.timeoutMs);
   try {
     const result = await captureFromManifest({
       manifestPath: values.manifest,
@@ -722,7 +743,8 @@ async function runCapture(args: string[]): Promise<void> {
       baseUrl: values["base-url"],
       overwrite: values.overwrite,
       readySelector: values["ready-selector"],
-      waitUntil: values["wait-until"] as WaitUntilStrategy | undefined,
+      waitUntil: (values["wait-until"] as WaitUntilStrategy | undefined) ?? config.browser.waitUntil,
+      timeoutMs,
       pythonCommand: values.python,
     });
 
@@ -749,8 +771,33 @@ async function runCapture(args: string[]): Promise<void> {
   }
 }
 
+function positiveFlag(value: string | undefined, fallback: number): number {
+  if (value === undefined) return fallback;
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 1) printUsageError("Expected a positive integer, got: " + value);
+  return n;
+}
+
 async function main(): Promise<void> {
   const rawArgs = process.argv.slice(2);
+  let configPath: string | undefined;
+  for (let i = 0; i < rawArgs.length; i++) {
+    if (rawArgs[i] === "--config") {
+      if (!rawArgs[i + 1] || rawArgs[i + 1].startsWith("--")) printUsageError("--config requires a path");
+      configPath = rawArgs[i + 1];
+      rawArgs.splice(i, 2);
+      i--;
+    } else if (rawArgs[i].startsWith("--config=")) {
+      configPath = rawArgs[i].slice(9);
+      rawArgs.splice(i--, 1);
+    }
+  }
+  try {
+    config = loadConfig(configPath);
+  } catch (err: any) {
+    console.log(JSON.stringify({ status: "failed", error: makeError("config_invalid", err.message) }, null, 2));
+    process.exit(1);
+  }
 
   if (rawArgs.length === 0) {
     printUsageError(
