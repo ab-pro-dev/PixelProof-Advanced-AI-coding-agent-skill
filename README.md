@@ -6,7 +6,7 @@ PixelProof is an AI coding-agent skill and deterministic visual verification too
 
 Phases 1 and 2 done; Phase 3 evidence tools done; agent loop instructions in SKILL.md.
 
-The Phase 1 comparison engine, read-only project inspector, manifest validator, and report generator are fully implemented, along with Phase 2 Playwright browser capture and Phase 3 refinement iteration state tracking, delta calculations, region grid metrics, priority scoring, and stall/regression/stop-reason evaluation. Actionable error hints (`error.hint`) provide next-step guidance on all failure results across Python and TypeScript (spec §11). Planned future features—including project initialization (`init`), perceptual SSIM, DOM geometry checks, and the autonomous multi-iteration refinement loop (`run`)—are NOT BUILT YET (Phase 3/4).
+The Phase 1 comparison engine, read-only project inspector, manifest validator, and report generator are fully implemented, along with Phase 2 Playwright browser capture and Phase 3 refinement iteration state tracking, delta calculations, region grid metrics, priority scoring, and stall/regression/stop-reason evaluation. Actionable error hints (`error.hint`) provide next-step guidance on all failure results across Python and TypeScript (spec §11). Planned future features—including perceptual SSIM, DOM geometry checks, and the autonomous multi-iteration refinement loop (`run`)—are NOT BUILT YET (Phase 3/4).
 
 ## Run the Demo
 
@@ -94,8 +94,12 @@ The TypeScript CLI provides automated manifest validation, project inspection, b
    ```
    Evaluates runtime environment, Node.js version, Python version, required packages, and Chromium launchability against specification requirements (§9.3, §19). See [docs/install.md](docs/install.md) for installation instructions.
 
+9. **Project Initialization (built):**
+
+   `pixelproof init [--dir DIR] [--overwrite]`: built; creates `references.json`, `references/.gitkeep`, and `pixelproof.config.json` (default DIR: cwd). Existing files are refused without `--overwrite`. Add your 1280×720 PNG at `references/home-desktop.png` before validating; until then, `validate` reports `image_missing`. Pass `--config pixelproof.config.json` to use the generated configuration.
+
 Planned TypeScript CLI commands:
-- `pixelproof init`: NOT BUILT YET (Phase 4 / spec §11)
+
 - `pixelproof run`: NOT BUILT YET (Phase 3 / spec §11)
 
 ### Python CLI (`pixelproof_image.cli`)

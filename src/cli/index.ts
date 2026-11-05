@@ -13,6 +13,7 @@
  *   Environment variables and secrets are never logged.
  */
 
+import { initProject } from "../core/init.js";
 import { loadConfig } from "../core/config.js";
 import { parseArgs } from "node:util";
 import { captureFromManifest } from "../browser/capture-manifest.js";
@@ -41,6 +42,7 @@ Usage:
   pixelproof <command> [options]
 
 Available Commands:
+  init       Create starter reference manifest, folder, and configuration
   validate   Validate a reference manifest file
   inspect    Inspect a frontend project directory in read-only mode
   capture    Capture screenshots for all references registered in a manifest
@@ -778,6 +780,25 @@ function positiveFlag(value: string | undefined, fallback: number): number {
   return n;
 }
 
+function runInit(args: string[]): void {
+  let parsed;
+  try {
+    parsed = parseArgs({ args, options: {
+      dir: { type: "string" }, overwrite: { type: "boolean" },
+      help: { type: "boolean", short: "h" },
+    }, strict: true, allowPositionals: false });
+  } catch (err: any) {
+    printUsageError(err.message);
+  }
+  if (parsed.values.help) {
+    console.log("Usage: pixelproof init [--dir DIR] [--overwrite]\nCreates starter files in DIR (default: cwd). Add references/home-desktop.png before validating.");
+    process.exit(0);
+  }
+  const result = initProject(parsed.values.dir, parsed.values.overwrite);
+  console.log(JSON.stringify(result, null, 2));
+  process.exit(result.status === "created" ? 0 : 1);
+}
+
 async function main(): Promise<void> {
   const rawArgs = process.argv.slice(2);
   let configPath: string | undefined;
@@ -801,7 +822,7 @@ async function main(): Promise<void> {
 
   if (rawArgs.length === 0) {
     printUsageError(
-      "Missing required command. Supported commands: validate, inspect, capture, compare, report, iterate, progress, doctor. Use --help for usage."
+      "Missing required command. Supported commands: init, validate, inspect, capture, compare, report, iterate, progress, doctor. Use --help for usage."
     );
   }
 
@@ -809,6 +830,11 @@ async function main(): Promise<void> {
 
   if (firstArg === "--help" || firstArg === "-h") {
     printRootHelp();
+  }
+
+  if (firstArg === "init") {
+    runInit(rawArgs.slice(1));
+    return;
   }
 
   if (firstArg === "validate") {
@@ -852,7 +878,7 @@ async function main(): Promise<void> {
   }
 
   printUsageError(
-    `Unknown command: '${firstArg}'. Supported commands: validate, inspect, capture, compare, report, iterate, progress, doctor.`
+    `Unknown command: '${firstArg}'. Supported commands: init, validate, inspect, capture, compare, report, iterate, progress, doctor.`
   );
 }
 
