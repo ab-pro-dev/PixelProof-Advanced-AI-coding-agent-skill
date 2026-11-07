@@ -426,3 +426,77 @@ def test_cli_report_output_exists_and_overwrite(tmp_path: Path):
     assert proc3.returncode == 0
     data3 = json.loads(proc3.stdout)
     assert data3["status"] == "written"
+
+
+def test_report_differing_and_identical_references_notes_and_summary(tmp_path: Path):
+    """Test differingReferences, identicalReferences, and note lines under OVERALL banner."""
+    # 1. 2 of 3 references differing -> NOTE says 2 of 3, differingReferences 2, OVERALL line unchanged
+    summary_2_of_3 = {
+        "project": {"name": "Test 2 of 3"},
+        "references": [
+            {"referenceId": "ref1", "status": "compared", "metrics": {"mae": 1.0}, "differingPixels": 10},
+            {"referenceId": "ref2", "status": "compared", "metrics": {"mae": 2.5}, "differingPixels": 25},
+            {"referenceId": "ref3", "status": "compared", "metrics": {"mae": 0.0}, "differingPixels": 0},
+        ],
+        "checks": [{"name": "check1", "state": "passed", "detail": "Passed"}],
+    }
+    rep1 = build_report(summary_2_of_3)
+    assert rep1["summary"]["differingReferences"] == 2
+    assert rep1["summary"]["identicalReferences"] == 1
+    assert rep1["summary"]["compared"] == 3
+    assert rep1["summary"]["failed"] == 0
+    assert rep1["overall"] == "OVERALL: COMPLETE (tool execution only, visual quality not judged)"
+
+    out1 = write_report(rep1, tmp_path / "out1")
+    md1 = Path(out1["paths"]["markdown"]).read_text(encoding="utf-8")
+    lines1 = [line for line in md1.splitlines() if line.strip()]
+    assert lines1[0] == "# OVERALL: COMPLETE (tool execution only, visual quality not judged)"
+    assert lines1[1] == "NOTE: 2 of 3 references compared but still differ from their references (see Visual Comparison Metrics)."
+
+    # 2. All identical -> second NOTE, differingReferences 0, identicalReferences count, OVERALL line unchanged
+    summary_all_identical = {
+        "project": {"name": "Test All Identical"},
+        "references": [
+            {"referenceId": "ref1", "status": "compared", "metrics": {"mae": 0.0}, "differingPixels": 0},
+            {"referenceId": "ref2", "status": "compared", "metrics": {"mae": 0.0}, "differingPixels": 0},
+        ],
+        "checks": [{"name": "check1", "state": "passed", "detail": "Passed"}],
+    }
+    rep2 = build_report(summary_all_identical)
+    assert rep2["summary"]["differingReferences"] == 0
+    assert rep2["summary"]["identicalReferences"] == 2
+    assert rep2["summary"]["compared"] == 2
+    assert rep2["summary"]["failed"] == 0
+    assert rep2["overall"] == "OVERALL: COMPLETE (tool execution only, visual quality not judged)"
+
+    out2 = write_report(rep2, tmp_path / "out2")
+    md2 = Path(out2["paths"]["markdown"]).read_text(encoding="utf-8")
+    lines2 = [line for line in md2.splitlines() if line.strip()]
+    assert lines2[0] == "# OVERALL: COMPLETE (tool execution only, visual quality not judged)"
+    assert lines2[1] == "NOTE: All compared references have 0 differing pixels (this is a measurement, not proof of correctness)."
+
+    # 3. Failed references are not counted as either (differing or identical), OVERALL line unchanged
+    summary_with_failed = {
+        "project": {"name": "Test Failed Excluded"},
+        "references": [
+            {"referenceId": "ref1", "status": "compared", "metrics": {"mae": 1.0}, "differingPixels": 10},
+            {"referenceId": "ref2", "status": "compared", "metrics": {"mae": 0.0}, "differingPixels": 0},
+            {"referenceId": "ref3", "status": "failed", "error": {"code": "image_missing", "message": "File not found"}},
+        ],
+        "checks": [{"name": "check1", "state": "passed", "detail": "Passed"}],
+    }
+    rep3 = build_report(summary_with_failed)
+    # Failed reference must NOT be counted as differing or identical
+    assert rep3["summary"]["differingReferences"] == 1
+    assert rep3["summary"]["identicalReferences"] == 1
+    assert rep3["summary"]["compared"] == 2
+    assert rep3["summary"]["failed"] == 1
+    assert rep3["summary"]["totalReferences"] == 3
+    # OVERALL line is unchanged (INCOMPLETE because ref3 failed)
+    assert rep3["overall"] == "OVERALL: INCOMPLETE"
+
+    out3 = write_report(rep3, tmp_path / "out3")
+    md3 = Path(out3["paths"]["markdown"]).read_text(encoding="utf-8")
+    lines3 = [line for line in md3.splitlines() if line.strip()]
+    assert lines3[0] == "# OVERALL: INCOMPLETE"
+    assert lines3[1] == "NOTE: 1 of 2 references compared but still differ from their references (see Visual Comparison Metrics)."

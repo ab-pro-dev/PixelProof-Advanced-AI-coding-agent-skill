@@ -63,6 +63,7 @@ Copied faithfully from §19 of the project documentation:
   - Phase 4: benchmark execution and determinism report (spec §18)
   - Phase 4: iterate comparison artifact auto-regeneration (spec §8, §11)
   - Phase 4: pytest venv shadowing warning in install guide (AGENT PROPOSAL)
+  - Phase 4: report differing references note and summary fields (spec §15, §16)
   - Add agent adapters and installation instructions.
   - Add robust error handling and diagnostic output.
   - Complete unit, integration, regression, and end-to-end tests.

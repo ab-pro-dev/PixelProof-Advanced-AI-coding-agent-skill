@@ -75,6 +75,8 @@ def build_report(run_summary: dict[str, Any]) -> dict[str, Any]:
     total_refs = len(raw_references)
     compared_count = 0
     failed_count = 0
+    differing_count = 0
+    identical_count = 0
     processed_references: list[dict[str, Any]] = []
 
     for ref in raw_references:
@@ -85,6 +87,17 @@ def build_report(run_summary: dict[str, Any]) -> dict[str, Any]:
         status = ref_entry.get("status")
         if status == "compared":
             compared_count += 1
+            diff_px = ref_entry.get("differingPixels")
+            if diff_px is None and isinstance(ref_entry.get("metrics"), dict):
+                diff_px = ref_entry["metrics"].get("differingPixels")
+            try:
+                diff_int = int(diff_px) if diff_px is not None else 0
+            except (ValueError, TypeError):
+                diff_int = 0
+            if diff_int > 0:
+                differing_count += 1
+            else:
+                identical_count += 1
         else:
             # References without status are counted as failed, not skipped silently
             if "status" not in ref_entry:
@@ -162,6 +175,8 @@ def build_report(run_summary: dict[str, Any]) -> dict[str, Any]:
             "totalReferences": total_refs,
             "compared": compared_count,
             "failed": failed_count,
+            "differingReferences": differing_count,
+            "identicalReferences": identical_count,
         },
         "references": processed_references,
         "checks": validated_checks,
@@ -178,13 +193,27 @@ def _render_markdown(report: dict[str, Any], template_text: str) -> str:
     """Render human-readable Markdown using string.Template."""
     overall = report["overall"]
     reasons = report.get("overallReasons", [])
+    summary = report.get("summary", {})
+    differing_refs = summary.get("differingReferences", 0)
+    compared_refs_count = summary.get("compared", 0)
+
+    if differing_refs > 0:
+        note_line = (
+            f"NOTE: {differing_refs} of {compared_refs_count} references compared but still "
+            "differ from their references (see Visual Comparison Metrics)."
+        )
+    else:
+        note_line = (
+            "NOTE: All compared references have 0 differing pixels "
+            "(this is a measurement, not proof of correctness)."
+        )
+
+    banner_lines = [f"# {overall}", "", note_line]
     if reasons:
-        banner_lines = [f"# {overall}", "", "**Reasons Incomplete:**"]
+        banner_lines.extend(["", "**Reasons Incomplete:**"])
         for r in reasons:
             banner_lines.append(f"- {r}")
-        overall_banner = "\n".join(banner_lines)
-    else:
-        overall_banner = f"# {overall}"
+    overall_banner = "\n".join(banner_lines)
 
     summary = report["summary"]
     checks = report["checks"]
