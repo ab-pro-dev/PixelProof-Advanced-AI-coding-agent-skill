@@ -53,6 +53,7 @@ See [docs/decisions.md](docs/decisions.md) for owner-delegated decisions resolvi
 - [docs/decisions.md](docs/decisions.md): Owner-delegated architectural decisions Q1–Q9.
 - [docs/release-checklist.md](docs/release-checklist.md): Public release verification checklist (§15, §19).
 - [docs/roadmap.md](docs/roadmap.md): Four-phase development roadmap (§19).
+- [docs/benchmarks.md](docs/benchmarks.md): Measured command execution times and determinism (§18).
 
 ## Available CLI Commands
 

@@ -60,6 +60,7 @@ Copied faithfully from §19 of the project documentation:
   - Phase 4: error.hint on all failures (AGENT PROPOSAL)
   - Phase 4: project init command (built) (spec §11)
   - Phase 4: architecture, security, troubleshooting, framework, and portability docs (spec §4, §13, §17, §9)
+  - Phase 4: benchmark execution and determinism report (spec §18)
   - Add agent adapters and installation instructions.
   - Add robust error handling and diagnostic output.
   - Complete unit, integration, regression, and end-to-end tests.
