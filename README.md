@@ -40,6 +40,20 @@ Run the automated test suite:
 See [docs/install.md](docs/install.md) for step-by-step setup instructions on Linux, macOS, and Windows.
 See [docs/decisions.md](docs/decisions.md) for owner-delegated decisions resolving architectural questions Q1 to Q9.
 
+## Documentation
+
+- [docs/architecture.md](docs/architecture.md): Six core components, separation rule, and Python/TypeScript split (§4).
+- [docs/security.md](docs/security.md): Localhost restrictions, path containment, and secret protection (§13, §17).
+- [docs/troubleshooting.md](docs/troubleshooting.md): Diagnosing common errors and environment issues (§11, §19).
+- [docs/framework-detection.md](docs/framework-detection.md): Framework, script, and styling detection by `inspect` (§5.2, §10).
+- [docs/agent-portability.md](docs/agent-portability.md): Portable agent instructions and generic adapter conventions (§9).
+- [docs/workflow.md](docs/workflow.md): Mandatory 8-step visual reconstruction workflow (§5).
+- [docs/visual-analysis.md](docs/visual-analysis.md): Visual comparison, region grids, and priority heuristics (§7, §8).
+- [docs/install.md](docs/install.md): Installation guide and environment requirements (§19).
+- [docs/decisions.md](docs/decisions.md): Owner-delegated architectural decisions Q1–Q9.
+- [docs/release-checklist.md](docs/release-checklist.md): Public release verification checklist (§15, §19).
+- [docs/roadmap.md](docs/roadmap.md): Four-phase development roadmap (§19).
+
 ## Available CLI Commands
 
 ### TypeScript CLI (`pixelproof`)
