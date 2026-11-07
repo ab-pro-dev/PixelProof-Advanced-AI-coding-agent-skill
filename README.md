@@ -161,3 +161,7 @@ cd examples/real-app && npm install && npm run dev
 pixelproof capture --manifest examples/real-app/references/references.json --out /tmp/real-app-out
 ```
 
+## Plain HTML Example
+
+`examples/plain-html/` is a static HTML/CSS fixture (no JavaScript, system fonts) with two routes (`/` and `/about`). Serve it with `python -m http.server 5174 --bind 127.0.0.1`.
+

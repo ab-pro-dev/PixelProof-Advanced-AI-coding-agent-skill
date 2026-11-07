@@ -30,7 +30,7 @@ Do not activate PixelProof for backend-only tasks, non-visual refactorings, or p
 ## 3. The Mandatory Workflow
 
 Follow the §5 execution workflow in order:
-- **Step 01: Register the references** — BUILT (`pixelproof validate`); manifest creation CLI (`pixelproof init`: NOT BUILT YET).
+- **Step 01: Register the references** — BUILT (`pixelproof validate`, `pixelproof init`); automated reference discovery (NOT BUILT YET).
 - **Step 02: Inspect the project** — BUILT (`pixelproof inspect`); token/route extractors (NOT BUILT YET).
 - **Step 03: Analyze the visual design** — Agent step (`design-spec.md`); automated design parser (NOT BUILT YET).
 - **Step 04: Implement the pages** — Agent step editing code; template scaffolders (NOT BUILT YET).
@@ -51,7 +51,8 @@ Inspect reference screenshots and write `design-spec.md` before coding:
 
 ## 5. How to Use the Comparison Tools
 
-The 7 built CLI commands with exact flags:
+The 8 built CLI commands with exact flags:
+- `pixelproof init [--dir DIR] [--overwrite]`
 - `pixelproof validate --manifest <path> [--python <cmd>] [--help]`
 - `pixelproof inspect --project <dir> [--python <cmd>] [--help]`
 - `pixelproof capture --manifest <path> --out <dir> [--base-url <url>] [--overwrite] [--ready-selector <selector>] [--wait-until <strategy>] [--python <cmd>] [--help]`
@@ -61,7 +62,6 @@ The 7 built CLI commands with exact flags:
 - `pixelproof report --summary <path> --out <dir> [--overwrite] [--python <cmd>] [--help]`
 
 Planned unbuilt commands:
-- `pixelproof init`: NOT BUILT YET (Phase 4 / spec §11).
 - `pixelproof run`: NOT BUILT YET (Phase 3 / spec §11).
 
 ---

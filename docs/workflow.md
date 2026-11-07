@@ -8,9 +8,11 @@ This document details the mandatory 8-step visual reconstruction workflow define
 
 - **What the agent does:** Locates reference screenshot files, identifies target routes and viewport dimensions, and prepares or checks the reference manifest (`references.json`). The agent ensures that each reference image file exists, is readable, and matches the specified viewport dimensions.
 - **Which command supports it today:**
-  `pixelproof validate --manifest PATH [--python CMD]` (or `python -m pixelproof_image.cli validate ...`)
-  Validates manifest syntax (version 1), route formats, viewport width/height, deviceScaleFactor, and image readability. Enforces that image paths stay inside the manifest directory (Option C, AGENT PROPOSAL pending Q3).
-- **What is NOT BUILT YET:** Automated reference discovery, interactive registration, and the manifest generation CLI (`pixelproof init`: NOT BUILT YET).
+  - `pixelproof init [--dir DIR] [--overwrite]`
+    Creates starter files in DIR (default: cwd). Add references/home-desktop.png before validating.
+  - `pixelproof validate --manifest PATH [--python CMD]` (or `python -m pixelproof_image.cli validate ...`)
+    Validates manifest syntax (version 1), route formats, viewport width/height, deviceScaleFactor, and image readability. Enforces that image paths stay inside the manifest directory (Option C, AGENT PROPOSAL pending Q3).
+- **What is NOT BUILT YET:** Automated reference discovery, interactive registration (`pixelproof run`: NOT BUILT YET).
 
 ---
 
