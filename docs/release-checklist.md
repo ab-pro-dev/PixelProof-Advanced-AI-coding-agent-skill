@@ -16,16 +16,16 @@ Pre-release checklist tracking public-release deliverables, specification accept
 
 ---
 
-## 2. Specification Acceptance Criteria (§15, §17, §18)
+## 2. Specification Acceptance Criteria (§15)
 
-- [ ] Multi-page reference understanding operates across diverse route configurations (§15)
-- [ ] Project inspection identifies frameworks, dependencies, and styles in read-only mode (§5.2, §15)
-- [ ] Deterministic visual verification produces accurate overlays, difference images, and measurements (§7.1, §15)
-- [ ] Iterative refinement engine guides defect resolution without destructive regressions (§8.1, §15)
-- [ ] Final reporting truthfully discloses unverified pages, failed references, or skipped checks (§15, §16)
-- [ ] Automated test suite verifies normal execution, edge cases, and failure handling (§14, §15)
-- [ ] Safety and sandboxing rules protect host source code and prevent untrusted execution (§17)
-- [ ] Resource usage conforms to token, memory, and time constraints (§18)
+- [x] Manifest validation: valid and invalid references are handled correctly (§15)
+- [x] Project inspection: framework and commands are detected without destructive edits (§5.2, §15)
+- [x] Browser capture: multiple routes capture at the requested viewport (§13, §15)
+- [x] Visual comparison: overlay, diff, and numeric metrics are generated correctly (§7.1, §15)
+- [x] Iterative workflow: issues can be ranked, rechecked, and stopped at the limit (§8.1, §15)
+- [x] Failure reporting: failed routes and unavailable checks are never marked successful (§15, §16)
+- [x] Portability: core instructions do not require one frontend framework or one coding agent (§9, §15)
+- [x] Safety: secrets are excluded, user changes are preserved, and risky actions are blocked (§17, §15)
 
 ---
 
