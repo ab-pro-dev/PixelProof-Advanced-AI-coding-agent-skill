@@ -152,7 +152,7 @@ Required flags:
 Options:
   --config <path>    Configuration JSON (default: config/default.json, else built-in defaults)
   --max-iterations <n> Maximum iterations (default: config maxIterations, 5)
-  --overwrite          Overwrite existing comparison artifacts
+  --overwrite          Accepted for compatibility; comparison artifacts are always regenerated
   --python <cmd>       Python executable command or path (default: python)
   --help, -h           Show help for iterate command
 `);

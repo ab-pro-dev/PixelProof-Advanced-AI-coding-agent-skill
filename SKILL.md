@@ -57,7 +57,7 @@ The 8 built CLI commands with exact flags:
 - `pixelproof inspect --project <dir> [--python <cmd>] [--help]`
 - `pixelproof capture --manifest <path> --out <dir> [--base-url <url>] [--overwrite] [--ready-selector <selector>] [--wait-until <strategy>] [--python <cmd>] [--help]`
 - `pixelproof compare --id <id> --reference <path> --actual <path> --out <dir> [--regions] [--grid <RxC>] [--weights <path>] [--overwrite] [--python <cmd>] [--help]`
-- `pixelproof iterate --manifest <path> --actual-dir <dir> --out <dir> [--overwrite] [--python <cmd>] [--help]`
+- `pixelproof iterate --manifest <path> --actual-dir <dir> --out <dir> [--config <path>] [--max-iterations <n>] [--overwrite] [--python <cmd>] [--help]`
 - `pixelproof progress --state <path> [--stall-window <n>] [--python <cmd>] [--help]`
 - `pixelproof report --summary <path> --out <dir> [--overwrite] [--python <cmd>] [--help]`
 
@@ -88,7 +88,7 @@ Prioritize visual defects using the §8.2 default sequence (AGENT PROPOSAL pendi
 4. Read references, write `design-spec.md`.
 5. Implement pages following existing project architecture.
 6. Capture screenshots: `pixelproof capture --manifest <path> --out <dir> [--base-url <url>]`
-7. Iterate (compare + record): `pixelproof iterate --manifest <path> --actual-dir <dir> --out <dir> [--overwrite]`
+7. Iterate (compare + record): `pixelproof iterate --manifest <path> --actual-dir <dir> --out <dir> [--config <path>] [--max-iterations <n>] [--overwrite] [--python <cmd>]`. Needs fresh `capture` output each loop and overwrites only its own comparison artifacts under `<out>/comparison/` (state file `iterations.json` is append-only, reference PNGs are never touched; `--overwrite` accepted for compatibility).
 8. Read progress and regions ranking, fix highest-ranked root cause: `pixelproof progress --state <dir>/state/iterations.json [--stall-window <n>]`
 9. Recapture affected routes only, then repeat from step 7 until a stop reason is met.
 10. Final full capture + report: `pixelproof report --summary <path> --out <dir> [--overwrite]`

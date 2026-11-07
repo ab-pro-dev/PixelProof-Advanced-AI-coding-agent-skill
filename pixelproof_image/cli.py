@@ -160,7 +160,7 @@ def main(argv: list[str] | None = None) -> None:
         "--overwrite",
         action="store_true",
         default=False,
-        help="Overwrite existing comparison artifacts.",
+        help="Accepted for compatibility; comparison artifacts are always regenerated.",
     )
 
     # 6. Progress subcommand
@@ -354,7 +354,7 @@ def main(argv: list[str] | None = None) -> None:
                 reference_path=ref_path,
                 actual_path=actual_path,
                 output_dir=out_dir,
-                overwrite=args.overwrite,
+                overwrite=True,
                 regions=False,
             )
             run_results.append(res)

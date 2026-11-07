@@ -536,6 +536,88 @@ describe("TypeScript CLI wrappers (compare & report)", () => {
     assert.deepStrictEqual(parsed.deltas, { "ref-iter": { state: "new" } });
   });
 
+  test("wrapper stdout byte-identical to Python CLI for iterate second run without --overwrite", async () => {
+    const iterDir = path.join(tmpDir, "iter_test_byte_twice");
+    fs.mkdirSync(iterDir, { recursive: true });
+    const refPng = path.join(iterDir, "ref.png");
+    const actPng = path.join(iterDir, "ref-iter.png");
+    execSync(
+      `python3 -c "from PIL import Image; Image.new('RGB', (40, 40), 'blue').save('${refPng}'); Image.new('RGB', (40, 40), 'blue').save('${actPng}')"`
+    );
+    const manifestPath = path.join(iterDir, "manifest.json");
+    fs.writeFileSync(
+      manifestPath,
+      JSON.stringify({
+        version: 1,
+        references: [
+          {
+            id: "ref-iter",
+            image: "ref.png",
+            route: "/iter",
+            viewport: { width: 40, height: 40 },
+            captureType: "viewport",
+          },
+        ],
+      })
+    );
+
+    const outTs = path.join(iterDir, "out_ts");
+    const outPy = path.join(iterDir, "out_py");
+
+    // First iteration
+    await runCli([
+      "iterate",
+      "--manifest",
+      manifestPath,
+      "--actual-dir",
+      iterDir,
+      "--out",
+      outTs,
+    ]);
+    await execFileAsync("python", [
+      "-m",
+      "pixelproof_image.cli",
+      "iterate",
+      "--manifest",
+      manifestPath,
+      "--actual-dir",
+      iterDir,
+      "--out",
+      outPy,
+    ]);
+
+    // Second iteration WITHOUT --overwrite
+    const { stdout: tsStdout, code: tsCode } = await runCli([
+      "iterate",
+      "--manifest",
+      manifestPath,
+      "--actual-dir",
+      iterDir,
+      "--out",
+      outTs,
+    ]);
+    assert.strictEqual(tsCode, 0);
+
+    const pyRes = await execFileAsync("python", [
+      "-m",
+      "pixelproof_image.cli",
+      "iterate",
+      "--manifest",
+      manifestPath,
+      "--actual-dir",
+      iterDir,
+      "--out",
+      outPy,
+    ]);
+
+    assert.strictEqual(tsStdout, pyRes.stdout);
+    const parsed = JSON.parse(tsStdout);
+    assert.strictEqual(parsed.status, "recorded");
+    assert.strictEqual(parsed.iteration, 2);
+    assert.strictEqual(parsed.iterationsRemaining, 3);
+    assert.notStrictEqual(parsed.progress.stopReason, "blocked");
+  });
+
   test("wrapper stdout byte-identical to Python CLI for progress", async () => {
     const progDir = path.join(tmpDir, "prog_test_byte");
     fs.mkdirSync(progDir, { recursive: true });

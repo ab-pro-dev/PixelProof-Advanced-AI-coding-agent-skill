@@ -664,3 +664,283 @@ def test_iterate_includes_progress_object(iteration_schema: dict, tmp_path: Path
     state_data_with_prog = copy.deepcopy(state_data)
     state_data_with_prog["progress"] = res1["progress"]
     jsonschema.validate(state_data_with_prog, iteration_schema)
+
+
+def test_iterate_twice_without_overwrite_regenerates_artifacts_not_blocked(
+    iteration_schema: dict, tmp_path: Path
+):
+    """iterate run twice without --overwrite succeeds, overwrites comparison artifacts, and is not blocked."""
+    refs_dir = tmp_path / "refs"
+    actual_dir = tmp_path / "actuals"
+    out_dir = tmp_path / "out"
+    refs_dir.mkdir()
+    actual_dir.mkdir()
+
+    img_ref_a = refs_dir / "home.png"
+    img_ref_b = refs_dir / "about.png"
+    img_act_a = actual_dir / "home.png"
+    img_act_b = actual_dir / "about.png"
+
+    Image.new("RGB", (60, 40), (255, 0, 0)).save(img_ref_a)
+    Image.new("RGB", (60, 40), (0, 255, 0)).save(img_ref_b)
+    Image.new("RGB", (60, 40), (255, 0, 0)).save(img_act_a)
+    Image.new("RGB", (60, 40), (0, 255, 0)).save(img_act_b)
+
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "references": [
+                    {
+                        "id": "home",
+                        "image": "refs/home.png",
+                        "route": "/",
+                        "viewport": {"width": 60, "height": 40},
+                        "captureType": "viewport",
+                    },
+                    {
+                        "id": "about",
+                        "image": "refs/about.png",
+                        "route": "/about",
+                        "viewport": {"width": 60, "height": 40},
+                        "captureType": "viewport",
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    cmd = [
+        sys.executable,
+        "-m",
+        "pixelproof_image.cli",
+        "iterate",
+        "--manifest",
+        str(manifest_path),
+        "--actual-dir",
+        str(actual_dir),
+        "--out",
+        str(out_dir),
+    ]
+
+    # Iteration 1
+    proc1 = subprocess.run(cmd, capture_output=True, text=True)
+    assert proc1.returncode == 0
+    doc1 = json.loads(proc1.stdout)
+    assert doc1["status"] == "recorded"
+    assert doc1["iteration"] == 1
+    assert doc1["iterationsRemaining"] == 4
+    comp_dir = out_dir / "comparison"
+    assert (comp_dir / "home-overlay.png").exists()
+    assert (comp_dir / "about-overlay.png").exists()
+
+    # Iteration 2 WITHOUT --overwrite
+    proc2 = subprocess.run(cmd, capture_output=True, text=True)
+    assert proc2.returncode == 0
+    doc2 = json.loads(proc2.stdout)
+    assert doc2["status"] == "recorded"
+    assert doc2["iteration"] == 2
+    assert doc2["iterationsRemaining"] == 3
+    assert "output_exists" not in proc2.stdout
+    assert all(r["status"] == "compared" for r in doc2["references"])
+    assert doc2["progress"]["stopReason"] != "blocked"
+    assert doc2["progress"]["stopReason"] == "no_differences"
+
+    # Both iterations recorded in state file
+    state_file = out_dir / "state" / "iterations.json"
+    state_data = json.loads(state_file.read_text(encoding="utf-8"))
+    assert len(state_data["iterations"]) == 2
+    assert state_data["iterations"][0]["number"] == 1
+    assert state_data["iterations"][1]["number"] == 2
+    jsonschema.validate(state_data, iteration_schema)
+
+
+def test_earlier_state_entries_byte_unchanged_after_second_iterate(tmp_path: Path):
+    """Earlier state entries in iterations.json remain byte-unchanged and reference PNGs untouched."""
+    refs_dir = tmp_path / "refs"
+    actual_dir = tmp_path / "actuals"
+    out_dir = tmp_path / "out"
+    refs_dir.mkdir()
+    actual_dir.mkdir()
+
+    img_ref = refs_dir / "page.png"
+    img_act = actual_dir / "page.png"
+    Image.new("RGB", (50, 50), "blue").save(img_ref)
+    Image.new("RGB", (50, 50), "red").save(img_act)
+
+    ref_hash_before = hashlib.sha256(img_ref.read_bytes()).hexdigest()
+
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "references": [
+                    {
+                        "id": "page",
+                        "image": "refs/page.png",
+                        "route": "/",
+                        "viewport": {"width": 50, "height": 50},
+                        "captureType": "viewport",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    cmd = [
+        sys.executable,
+        "-m",
+        "pixelproof_image.cli",
+        "iterate",
+        "--manifest",
+        str(manifest_path),
+        "--actual-dir",
+        str(actual_dir),
+        "--out",
+        str(out_dir),
+    ]
+
+    # Iteration 1
+    proc1 = subprocess.run(cmd, capture_output=True, text=True)
+    assert proc1.returncode == 0
+
+    state_file = out_dir / "state" / "iterations.json"
+    state_data_1 = json.loads(state_file.read_text(encoding="utf-8"))
+    entry0_raw = json.dumps(state_data_1["iterations"][0])
+
+    # Iteration 2 without --overwrite
+    proc2 = subprocess.run(cmd, capture_output=True, text=True)
+    assert proc2.returncode == 0
+
+    state_data_2 = json.loads(state_file.read_text(encoding="utf-8"))
+    assert len(state_data_2["iterations"]) == 2
+    assert json.dumps(state_data_2["iterations"][0]) == entry0_raw
+
+    # Reference PNG was never touched
+    ref_hash_after = hashlib.sha256(img_ref.read_bytes()).hexdigest()
+    assert ref_hash_before == ref_hash_after
+
+
+def test_compare_without_overwrite_still_fails_with_output_exists(tmp_path: Path):
+    """Direct compare without --overwrite on existing artifacts still fails with output_exists."""
+    ref_img = tmp_path / "ref.png"
+    act_img = tmp_path / "act.png"
+    out_dir = tmp_path / "out"
+
+    Image.new("RGB", (40, 40), "white").save(ref_img)
+    Image.new("RGB", (40, 40), "white").save(act_img)
+
+    cmd = [
+        sys.executable,
+        "-m",
+        "pixelproof_image.cli",
+        "compare",
+        "--id",
+        "test-card",
+        "--reference",
+        str(ref_img),
+        "--actual",
+        str(act_img),
+        "--out",
+        str(out_dir),
+    ]
+
+    # First compare produces artifacts
+    proc1 = subprocess.run(cmd, capture_output=True, text=True)
+    assert proc1.returncode == 0
+    doc1 = json.loads(proc1.stdout)
+    assert doc1["status"] == "compared"
+    assert (out_dir / "comparison" / "test-card-overlay.png").exists()
+
+    # Second compare without --overwrite fails
+    proc2 = subprocess.run(cmd, capture_output=True, text=True)
+    assert proc2.returncode == 1
+    doc2 = json.loads(proc2.stdout)
+    assert doc2["status"] == "failed"
+    assert doc2["error"]["code"] == "output_exists"
+
+    # Third compare with --overwrite succeeds
+    proc3 = subprocess.run(cmd + ["--overwrite"], capture_output=True, text=True)
+    assert proc3.returncode == 0
+    doc3 = json.loads(proc3.stdout)
+    assert doc3["status"] == "compared"
+
+
+def test_ts_wrapper_byte_identical_to_python_for_iterate(tmp_path: Path):
+    """TypeScript CLI wrapper is byte-identical to Python CLI for iterate."""
+    node_bin = Path("/usr/bin/node")
+    cli_js = REPO_ROOT / "dist" / "src" / "cli" / "index.js"
+    if not cli_js.exists() or not node_bin.exists():
+        pytest.skip("TypeScript build output or node not available")
+
+    refs_dir = tmp_path / "refs"
+    actual_dir = tmp_path / "actuals"
+    refs_dir.mkdir()
+    actual_dir.mkdir()
+
+    img_ref = refs_dir / "item.png"
+    img_act = actual_dir / "item.png"
+    Image.new("RGB", (30, 30), "yellow").save(img_ref)
+    Image.new("RGB", (30, 30), "yellow").save(img_act)
+
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "references": [
+                    {
+                        "id": "item",
+                        "image": "refs/item.png",
+                        "route": "/item",
+                        "viewport": {"width": 30, "height": 30},
+                        "captureType": "viewport",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    out_py = tmp_path / "out_py"
+    out_ts = tmp_path / "out_ts"
+
+    # Iteration 1
+    py_cmd = [
+        sys.executable,
+        "-m",
+        "pixelproof_image.cli",
+        "iterate",
+        "--manifest",
+        str(manifest_path),
+        "--actual-dir",
+        str(actual_dir),
+        "--out",
+        str(out_py),
+    ]
+    ts_cmd = [
+        str(node_bin),
+        str(cli_js),
+        "iterate",
+        "--manifest",
+        str(manifest_path),
+        "--actual-dir",
+        str(actual_dir),
+        "--out",
+        str(out_ts),
+    ]
+
+    subprocess.run(py_cmd, check=True)
+    subprocess.run(ts_cmd, check=True)
+
+    # Iteration 2 without --overwrite
+    py_res = subprocess.run(py_cmd, capture_output=True, text=True)
+    ts_res = subprocess.run(ts_cmd, capture_output=True, text=True)
+
+    assert py_res.returncode == 0
+    assert ts_res.returncode == 0
+    assert py_res.stdout == ts_res.stdout
