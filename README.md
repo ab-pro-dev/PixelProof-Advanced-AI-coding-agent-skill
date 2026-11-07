@@ -28,7 +28,7 @@ Run the automated test suite:
 
 - Python test suite (64 unit & CLI tests):
   ```bash
-  pytest -q
+  .venv/bin/python -m pytest -q
   ```
 - Node environment smoke test:
   ```bash

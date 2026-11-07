@@ -86,3 +86,6 @@ pip install -e ".[dev]"
 After completing the installation steps, verify your runtime environment and dependencies:
 
 run `pixelproof doctor`
+
+> [!NOTE]
+> Run Python tests with `.venv/bin/python -m pytest`, because a user-level `pytest` on PATH can shadow the venv one.
