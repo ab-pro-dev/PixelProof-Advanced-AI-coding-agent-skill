@@ -180,3 +180,8 @@ pixelproof capture --manifest examples/real-app/references/references.json --out
 
 `examples/plain-html/` is a static HTML/CSS fixture (no JavaScript, system fonts) with two routes (`/` and `/about`). Serve it with `python -m http.server 5174 --bind 127.0.0.1`.
 
+## Next.js Example
+
+`examples/nextjs-app/` is a minimal Next.js application with pinned exact dependencies, plain CSS, system fonts, and two routes (`/` and `/about`). Serve it with `npm run dev` (bound to `127.0.0.1:5175`).
+
+

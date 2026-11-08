@@ -26,6 +26,17 @@ PixelProof includes a passive, read-only project inspection engine (`pixelproof 
    - Verifies whether the target directory is inside a Git repository.
    - Detects uncommitted user modifications to preserve existing work (§17).
 
+## Real Verification: Next.js (`examples/nextjs-app`)
+
+Running `pixelproof inspect --project examples/nextjs-app` verified detection against an active Next.js application fixture:
+
+- **Framework:** `Next.js` (evidence: `next in dependencies`).
+- **Package Manager:** `npm` (evidence: `package-lock.json`).
+- **Scripts:** Verbatim copy of package scripts (`dev: "next dev -H 127.0.0.1 -p 5175"`, `build: "next build"`, `start: "next start -H 127.0.0.1 -p 5175"`).
+- **Styling:** `plain-css` (evidence: `1 *.css file(s) found (e.g. app/globals.css)`).
+- **Fonts & Assets:** 0 font files, 0 image files, empty asset directories.
+- **Uncertainties:** Explicitly reported `"Route detection not implemented in this step."` without guessing.
+
 ## What is NOT BUILT YET
 
 - **Automated Route Tree Detection:** Routing conventions vary widely across frameworks; route discovery is NOT BUILT YET (reports uncertainty in `inspect` output).
