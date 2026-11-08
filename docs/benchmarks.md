@@ -9,9 +9,21 @@ This document records measured wall-clock execution timings and determinism acro
 
 | Site | Routes | Status | Notes |
 | --- | --- | --- | --- |
-| `examples/real-app` (Vite) | `/`, `/dashboard` | **Skipped** | Owner's dev server on port 5173 was not running. |
+| `examples/real-app` (Vite) | `/`, `/dashboard` | **Benchmarked** | Served via `vite --host 127.0.0.1 --port 5173 --strictPort`. |
 | `examples/sample-project` | `/`, `/dashboard` | **Skipped** | Static project fixture without dev server; not served. |
 | `examples/plain-html` | `/`, `/about` | **Benchmarked** | Served via `python3 -m http.server 5174 --bind 127.0.0.1`. |
+
+## Measured Results (`examples/real-app (Vite + React)`)
+
+Each command was executed twice in succession against reference screenshots generated at 1280×720 (deviceScaleFactor: 1). Determinism verifies whether both runs produced identical differing pixel counts and metric scores. Measured with Node.js v24.22.2 and Chromium 156.0.8078.4 (from `pixelproof doctor`).
+
+| Site | Routes | Command | Run 1 (s) | Run 2 (s) | Determinism |
+| --- | --- | --- | --- | --- | --- |
+| `examples/real-app` | `/`, `/dashboard` | `pixelproof validate` | 0.739 | 0.697 | Identical (code 0, valid) |
+| `examples/real-app` | `/`, `/dashboard` | `pixelproof capture` | 2.485 | 2.578 | Identical (captured 2/2) |
+| `examples/real-app` | `/` | `pixelproof compare --regions` | 1.226 | 1.272 | Identical (0 differing px, MAE 0.0) |
+| `examples/real-app` | `/dashboard` | `pixelproof compare --regions` | 0.971 | 0.959 | Identical (0 differing px, MAE 0.0) |
+| `examples/real-app` | `/`, `/dashboard` | `pixelproof iterate` | 1.425 | 1.503 | Identical (0 differing px, MAE 0.0) |
 
 ## Measured Results (`examples/plain-html`)
 
