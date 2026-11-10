@@ -9,10 +9,23 @@ This document records measured wall-clock execution timings and determinism acro
 
 | Site | Routes | Status | Notes |
 | --- | --- | --- | --- |
+| `examples/vue-app` (Vite + Vue) | `/`, `/about` | **Benchmarked** | Served via `vite --host 127.0.0.1 --port 5176 --strictPort`. |
 | `examples/nextjs-app` (Next.js) | `/`, `/about` | **Benchmarked** | Served via `next dev -H 127.0.0.1 -p 5175`. |
 | `examples/real-app` (Vite) | `/`, `/dashboard` | **Benchmarked** | Served via `vite --host 127.0.0.1 --port 5173 --strictPort`. |
 | `examples/sample-project` | `/`, `/dashboard` | **Skipped** | Static project fixture without dev server; not served. |
 | `examples/plain-html` | `/`, `/about` | **Benchmarked** | Served via `python3 -m http.server 5174 --bind 127.0.0.1`. |
+
+## Measured Results (`examples/vue-app (Vite + Vue)`)
+
+Each command was executed twice in succession against reference screenshots generated at 1280×720 (deviceScaleFactor: 1). Determinism verifies whether both runs produced identical differing pixel counts and metric scores. Measured with Node.js v24.22.2 and Chromium 156.0.8078.4 (from `pixelproof doctor`).
+
+| Site | Routes | Command | Run 1 (s) | Run 2 (s) | Determinism |
+| --- | --- | --- | --- | --- | --- |
+| `examples/vue-app` | `/`, `/about` | `pixelproof validate` | 0.900 | 0.918 | Identical (code 0, valid) |
+| `examples/vue-app` | `/`, `/about` | `pixelproof capture` | 3.008 | 2.475 | Identical (captured 2/2) |
+| `examples/vue-app` | `/` | `pixelproof compare --regions` | 1.303 | 0.965 | Identical (0 differing px, MAE 0.0) |
+| `examples/vue-app` | `/about` | `pixelproof compare --regions` | 1.505 | 0.979 | Identical (0 differing px, MAE 0.0) |
+| `examples/vue-app` | `/`, `/about` | `pixelproof iterate` | 1.593 | 1.195 | Identical (0 differing px, MAE 0.0) |
 
 ## Measured Results (`examples/nextjs-app (Next.js)`)
 

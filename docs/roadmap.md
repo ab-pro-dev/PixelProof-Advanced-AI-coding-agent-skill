@@ -66,6 +66,7 @@ Copied faithfully from §19 of the project documentation:
   - Phase 4: report differing references note and summary fields (spec §15, §16)
   - Phase 4: real-app Vite benchmark execution and determinism table (spec §18)
   - Phase 4: nextjs-app benchmark execution and framework detection (spec §18, §10)
+  - Phase 4: vue-app benchmark execution and framework detection (spec §18, §10)
   - Add agent adapters and installation instructions.
   - Add robust error handling and diagnostic output.
   - Complete unit, integration, regression, and end-to-end tests.

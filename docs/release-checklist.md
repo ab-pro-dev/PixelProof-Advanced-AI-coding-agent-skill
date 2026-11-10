@@ -10,6 +10,7 @@ Pre-release checklist tracking public-release deliverables, specification accept
 - [ ] Add robust error handling and diagnostic output (§19 Phase 4)
 - [ ] Complete unit, integration, regression, and end-to-end tests (§14, §19 Phase 4)
 - [x] Test with different frontend frameworks: second framework tested (Next.js) (§19 Phase 4)
+- [x] Vue or Svelte tested: Vue app fixture and benchmarks verified (§19 Phase 4)
 - [x] Improve security, performance, and reproducibility: history scan re-run (§17, §18, §19 Phase 4)
 - [ ] Write release documentation and usage examples (§19 Phase 4)
 - [ ] Benchmark workflow on several multi-page sites (§19 Phase 4)

@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "project": {
+    "name": "vue-app",
+    "baseUrl": "http://127.0.0.1:5176"
+  },
+  "references": [
+    {
+      "id": "home-desktop",
+      "route": "/",
+      "captureType": "viewport",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "deviceScaleFactor": 1,
+      "image": "home-desktop.png",
+      "notes": "Reference PNG is NOT committed; generate it by running capture CLI or captureUrl."
+    },
+    {
+      "id": "about-desktop",
+      "route": "/about",
+      "captureType": "viewport",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "deviceScaleFactor": 1,
+      "image": "about-desktop.png",
+      "notes": "Reference PNG is NOT committed; generate it by running capture CLI or captureUrl."
+    }
+  ]
+}

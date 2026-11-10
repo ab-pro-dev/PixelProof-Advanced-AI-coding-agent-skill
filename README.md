@@ -184,4 +184,8 @@ pixelproof capture --manifest examples/real-app/references/references.json --out
 
 `examples/nextjs-app/` is a minimal Next.js application with pinned exact dependencies, plain CSS, system fonts, and two routes (`/` and `/about`). Serve it with `npm run dev` (bound to `127.0.0.1:5175`).
 
+## Vue Example
+
+`examples/vue-app/` is a minimal Vite + Vue application with pinned exact dependencies, plain CSS, system fonts, and two routes (`/` and `/about` handled via path check without a router library). Serve it with `npm run dev` (bound to `127.0.0.1:5176`).
+
 

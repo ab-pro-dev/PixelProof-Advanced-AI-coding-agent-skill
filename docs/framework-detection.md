@@ -37,6 +37,17 @@ Running `pixelproof inspect --project examples/nextjs-app` verified detection ag
 - **Fonts & Assets:** 0 font files, 0 image files, empty asset directories.
 - **Uncertainties:** Explicitly reported `"Route detection not implemented in this step."` without guessing.
 
+## Real Verification: Vue (`examples/vue-app`)
+
+Running `pixelproof inspect --project examples/vue-app` verified detection against a Vite + Vue application fixture:
+
+- **Framework:** `Vue` (evidence: `vue in dependencies`).
+- **Package Manager:** `npm` (evidence: `package-lock.json`).
+- **Scripts:** Verbatim copy of package scripts (`dev: "vite --host 127.0.0.1 --port 5176 --strictPort"`, `build: "vite build"`).
+- **Styling:** `plain-css` (evidence: `1 *.css file(s) found (e.g. src/style.css)`).
+- **Fonts & Assets:** 0 font files, 0 image files, empty asset directories.
+- **Uncertainties:** Explicitly reported `"Route detection not implemented in this step."` without guessing.
+
 ## What is NOT BUILT YET
 
 - **Automated Route Tree Detection:** Routing conventions vary widely across frameworks; route discovery is NOT BUILT YET (reports uncertainty in `inspect` output).
