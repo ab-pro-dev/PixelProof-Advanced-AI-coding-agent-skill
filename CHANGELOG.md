@@ -8,7 +8,7 @@ Initial preview release of PixelProof: portable AI coding-agent skill and determ
 
 ### What is Built
 
-The CLI provides 8 core commands plus an environment doctor command (`pixelproof <command>`):
+The CLI provides 9 commands (`pixelproof <command>`):
 - `init`: Create starter reference manifest, folder, and configuration (`references.json`, `references/.gitkeep`, `pixelproof.config.json`).
 - `validate`: Validate reference manifest JSON schema, relative paths, viewport bounds, and deviceScaleFactor.
 - `inspect`: Inspect target frontend project directory in read-only mode (package manager, framework, scripts, styling, assets, git status).

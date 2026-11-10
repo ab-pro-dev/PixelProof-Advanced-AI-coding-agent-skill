@@ -68,6 +68,7 @@ Copied faithfully from §19 of the project documentation:
   - Phase 4: nextjs-app benchmark execution and framework detection (spec §18, §10)
   - Phase 4: vue-app benchmark execution and framework detection (spec §18, §10)
   - Phase 4: v0.1.0 preview release packaging and changelog (spec §19)
+  - Phase 4: CLI root help command enumeration and doctor verification (spec §11, §19)
   - Add agent adapters and installation instructions.
   - Add robust error handling and diagnostic output.
   - Complete unit, integration, regression, and end-to-end tests.

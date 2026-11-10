@@ -38,8 +38,7 @@ function printUsageError(message: string): never {
 function printRootHelp(): void {
   console.log(`PixelProof: AI coding-agent skill and deterministic visual verification toolkit.
 
-Usage:
-  pixelproof <command> [options]
+Usage: pixelproof <command> [options]
 
 Available Commands:
   init       Create starter reference manifest, folder, and configuration
