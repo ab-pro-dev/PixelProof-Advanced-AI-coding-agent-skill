@@ -12,8 +12,11 @@ Pre-release checklist tracking public-release deliverables, specification accept
 - [x] Test with different frontend frameworks: second framework tested (Next.js) (§19 Phase 4)
 - [x] Vue or Svelte tested: Vue app fixture and benchmarks verified (§19 Phase 4)
 - [x] Improve security, performance, and reproducibility: history scan re-run (§17, §18, §19 Phase 4)
-- [ ] Write release documentation and usage examples (§19 Phase 4)
+- [x] Write release documentation and usage examples: docs reviewed by owner (security.md and install.md read) (§19 Phase 4)
 - [ ] Benchmark workflow on several multi-page sites (§19 Phase 4)
+- [ ] Contract frozen
+
+Contract: kept as PROPOSED for v0.1 preview
 
 ---
 

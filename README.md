@@ -1,5 +1,7 @@
 # PixelProof
 
+> **Status: v0.1.0 preview** — Known limits: tested only on Linux, other coding agents remain untested, and schemas, flags, and report shape are proposals and may change.
+
 PixelProof is an AI coding-agent skill and deterministic visual verification toolkit designed to reconstruct multi-page websites from screenshot references, compare browser captures against references, and iteratively refine the resulting code.
 
 ## Current Status
