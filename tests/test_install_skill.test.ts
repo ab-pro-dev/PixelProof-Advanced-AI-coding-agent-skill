@@ -59,4 +59,18 @@ describe("install-skill tool", () => {
     assert.strictEqual(results.length, 3);
     assert.ok(results.every((r) => r.status === "installed" || r.status === "updated"));
   });
+
+  test("re-installing reports already_installed without duplicating content", () => {
+    const firstRun = installSkill({ agent: "all", projectDir: tmpDir, global: false });
+    assert.ok(firstRun.every((r) => r.status === "installed"));
+
+    const secondRun = installSkill({ agent: "all", projectDir: tmpDir, global: false });
+    assert.strictEqual(secondRun.length, 3);
+    assert.ok(secondRun.every((r) => r.status === "already_installed"));
+
+    // Verify CLAUDE.md does not duplicate content
+    const claudeContent = fs.readFileSync(path.join(tmpDir, "CLAUDE.md"), "utf8");
+    const occurrences = (claudeContent.match(/PixelProof Visual Verification/g) || []).length;
+    assert.strictEqual(occurrences, 1);
+  });
 });

@@ -18,10 +18,12 @@ export interface InstallSkillOptions {
   projectDir?: string;
 }
 
+export type InstallStatus = "installed" | "updated" | "already_installed" | "failed";
+
 export interface InstallResult {
   agent: string;
   targetPath: string;
-  status: "installed" | "updated" | "failed";
+  status: InstallStatus;
   message: string;
 }
 
@@ -54,12 +56,29 @@ export function installForAntigravity(skillContent: string, isGlobal = true, pro
 
   try {
     fs.mkdirSync(targetDir, { recursive: true });
-    const exists = fs.existsSync(targetFile);
+    if (fs.existsSync(targetFile)) {
+      const existing = fs.readFileSync(targetFile, "utf8");
+      if (existing === content) {
+        return {
+          agent: "antigravity",
+          targetPath: targetFile,
+          status: "already_installed",
+          message: `PixelProof skill is already installed and up to date at: ${targetFile}`,
+        };
+      }
+      fs.writeFileSync(targetFile, content, "utf8");
+      return {
+        agent: "antigravity",
+        targetPath: targetFile,
+        status: "updated",
+        message: `Updated Antigravity skill at: ${targetFile}`,
+      };
+    }
     fs.writeFileSync(targetFile, content, "utf8");
     return {
       agent: "antigravity",
       targetPath: targetFile,
-      status: exists ? "updated" : "installed",
+      status: "installed",
       message: `Skill installed for Antigravity at: ${targetFile}`,
     };
   } catch (err: any) {
@@ -75,7 +94,7 @@ export function installForAntigravity(skillContent: string, isGlobal = true, pro
 export function installForClaude(projectDir = process.cwd()): InstallResult {
   const targetFile = path.join(projectDir, "CLAUDE.md");
   const snippet = `\n\n## PixelProof Visual Verification Workflow\n` +
-    `When reconstructing UI from screenshot references, use the PixelProof CLI:\n` +
+    `When reconstructing UI from screenshot references, use the PixelProof CLI (\`pixelproof-ui\`):\n` +
     `- Validate: \`pixelproof validate --manifest <path>\`\n` +
     `- Inspect: \`pixelproof inspect --project <dir>\`\n` +
     `- Capture: \`pixelproof capture --manifest <path> --out <dir>\`\n` +
@@ -87,9 +106,15 @@ export function installForClaude(projectDir = process.cwd()): InstallResult {
   try {
     if (fs.existsSync(targetFile)) {
       const existing = fs.readFileSync(targetFile, "utf8");
-      if (!existing.includes("PixelProof Visual Verification")) {
-        fs.appendFileSync(targetFile, snippet, "utf8");
+      if (existing.includes("PixelProof Visual Verification")) {
+        return {
+          agent: "claude",
+          targetPath: targetFile,
+          status: "already_installed",
+          message: `PixelProof instructions already found and up to date in ${targetFile}.`,
+        };
       }
+      fs.appendFileSync(targetFile, snippet, "utf8");
       return {
         agent: "claude",
         targetPath: targetFile,
@@ -130,12 +155,29 @@ ${skillContent}
 
   try {
     fs.mkdirSync(targetDir, { recursive: true });
-    const exists = fs.existsSync(targetFile);
+    if (fs.existsSync(targetFile)) {
+      const existing = fs.readFileSync(targetFile, "utf8");
+      if (existing === mdcContent) {
+        return {
+          agent: "cursor",
+          targetPath: targetFile,
+          status: "already_installed",
+          message: `PixelProof Cursor rule is already installed and up to date at: ${targetFile}`,
+        };
+      }
+      fs.writeFileSync(targetFile, mdcContent, "utf8");
+      return {
+        agent: "cursor",
+        targetPath: targetFile,
+        status: "updated",
+        message: `Updated Cursor rule at: ${targetFile}`,
+      };
+    }
     fs.writeFileSync(targetFile, mdcContent, "utf8");
     return {
       agent: "cursor",
       targetPath: targetFile,
-      status: exists ? "updated" : "installed",
+      status: "installed",
       message: `Installed Cursor rule at: ${targetFile}`,
     };
   } catch (err: any) {
@@ -165,9 +207,15 @@ export function installForCopilot(projectDir = process.cwd()): InstallResult {
     fs.mkdirSync(targetDir, { recursive: true });
     if (fs.existsSync(targetFile)) {
       const existing = fs.readFileSync(targetFile, "utf8");
-      if (!existing.includes("PixelProof Visual Verification")) {
-        fs.appendFileSync(targetFile, snippet, "utf8");
+      if (existing.includes("PixelProof Visual Verification")) {
+        return {
+          agent: "copilot",
+          targetPath: targetFile,
+          status: "already_installed",
+          message: `PixelProof instructions already found and up to date in ${targetFile}.`,
+        };
       }
+      fs.appendFileSync(targetFile, snippet, "utf8");
       return {
         agent: "copilot",
         targetPath: targetFile,
@@ -208,9 +256,15 @@ export function installForAgentsMarkdown(fileName: string, agentName: string, pr
   try {
     if (fs.existsSync(targetFile)) {
       const existing = fs.readFileSync(targetFile, "utf8");
-      if (!existing.includes("PixelProof Visual Verification")) {
-        fs.appendFileSync(targetFile, snippet, "utf8");
+      if (existing.includes("PixelProof Visual Verification")) {
+        return {
+          agent: agentName,
+          targetPath: targetFile,
+          status: "already_installed",
+          message: `PixelProof instructions already found and up to date in ${targetFile}.`,
+        };
       }
+      fs.appendFileSync(targetFile, snippet, "utf8");
       return {
         agent: agentName,
         targetPath: targetFile,
