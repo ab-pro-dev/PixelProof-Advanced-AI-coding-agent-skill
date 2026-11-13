@@ -4,8 +4,8 @@
   "description": "Deterministic visual verification toolkit and AI coding-agent skill for multi-page UI reconstruction",
   "type": "module",
   "bin": {
-    "pixelproof": "./dist/src/cli/index.js",
-    "pixelproof-ui": "./dist/src/cli/index.js"
+    "pixelproof": "dist/src/cli/index.js",
+    "pixelproof-ui": "dist/src/cli/index.js"
   },
   "scripts": {
     "build": "tsc",
@@ -44,7 +44,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ab-pro-dev/PixelProof-Advanced-AI-coding-agent-skill.git"
+    "url": "git+https://github.com/ab-pro-dev/PixelProof-Advanced-AI-coding-agent-skill.git"
   },
   "bugs": {
     "url": "https://github.com/ab-pro-dev/PixelProof-Advanced-AI-coding-agent-skill/issues"
