@@ -1,3 +1,8 @@
+---
+name: pixelproof
+description: Use when rebuilding, cloning, or visually verifying a multi-page website or frontend UI component from screenshot references. Provides deterministic visual verification, Playwright browser capture, region-based diff metrics, and iterative refinement tracking.
+---
+
 # PixelProof Agent Skill
 
 PixelProof is an AI coding-agent skill and deterministic visual verification toolkit for reconstructing multi-page websites from screenshot references, comparing browser screenshots against references, and iteratively refining frontend code.

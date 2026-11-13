@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export type SupportedAgent = "antigravity" | "claude" | "cursor" | "copilot" | "all";
+export type SupportedAgent = "antigravity" | "claude" | "cursor" | "copilot" | "opencode" | "codex" | "all";
 
 export interface InstallSkillOptions {
   agent?: SupportedAgent;
@@ -46,10 +46,16 @@ export function installForAntigravity(skillContent: string, isGlobal = true, pro
     : path.join(projectDir, ".gemini", "skills", "pixelproof");
   const targetFile = path.join(targetDir, "SKILL.md");
 
+  let content = skillContent;
+  if (!content.trim().startsWith("---")) {
+    const frontmatter = `---\nname: pixelproof\ndescription: Use when rebuilding, cloning, or visually verifying a multi-page website or frontend UI component from screenshot references. Provides deterministic visual verification, Playwright browser capture, region-based diff metrics, and iterative refinement tracking.\n---\n\n`;
+    content = frontmatter + content;
+  }
+
   try {
     fs.mkdirSync(targetDir, { recursive: true });
     const exists = fs.existsSync(targetFile);
-    fs.writeFileSync(targetFile, skillContent, "utf8");
+    fs.writeFileSync(targetFile, content, "utf8");
     return {
       agent: "antigravity",
       targetPath: targetFile,
@@ -142,6 +148,94 @@ ${skillContent}
   }
 }
 
+export function installForCopilot(projectDir = process.cwd()): InstallResult {
+  const targetDir = path.join(projectDir, ".github");
+  const targetFile = path.join(targetDir, "copilot-instructions.md");
+  const snippet = `\n\n## PixelProof Visual Verification Workflow\n` +
+    `When reconstructing UI from screenshot references, use the PixelProof CLI (\`pixelproof-ui\`):\n` +
+    `- Validate: \`pixelproof validate --manifest <path>\`\n` +
+    `- Inspect: \`pixelproof inspect --project <dir>\`\n` +
+    `- Capture: \`pixelproof capture --manifest <path> --out <dir>\`\n` +
+    `- Compare: \`pixelproof compare --id <id> --reference <path> --actual <path> --out <dir> --regions\`\n` +
+    `- Iterate: \`pixelproof iterate --manifest <path> --actual-dir <dir> --out <dir>\`\n` +
+    `- Progress: \`pixelproof progress --state <statePath>\`\n` +
+    `- Report: \`pixelproof report --summary <summaryPath> --out <dir>\`\n`;
+
+  try {
+    fs.mkdirSync(targetDir, { recursive: true });
+    if (fs.existsSync(targetFile)) {
+      const existing = fs.readFileSync(targetFile, "utf8");
+      if (!existing.includes("PixelProof Visual Verification")) {
+        fs.appendFileSync(targetFile, snippet, "utf8");
+      }
+      return {
+        agent: "copilot",
+        targetPath: targetFile,
+        status: "updated",
+        message: `Updated ${targetFile} with PixelProof instructions.`,
+      };
+    } else {
+      fs.writeFileSync(targetFile, `# Copilot Instructions\n${snippet}`, "utf8");
+      return {
+        agent: "copilot",
+        targetPath: targetFile,
+        status: "installed",
+        message: `Created ${targetFile} with PixelProof instructions.`,
+      };
+    }
+  } catch (err: any) {
+    return {
+      agent: "copilot",
+      targetPath: targetFile,
+      status: "failed",
+      message: `Failed to install for Copilot: ${err.message}`,
+    };
+  }
+}
+
+export function installForAgentsMarkdown(fileName: string, agentName: string, projectDir = process.cwd()): InstallResult {
+  const targetFile = path.join(projectDir, fileName);
+  const snippet = `\n\n## PixelProof Visual Verification Workflow\n` +
+    `When reconstructing UI from screenshot references, use the PixelProof CLI (\`pixelproof-ui\`):\n` +
+    `- Validate: \`pixelproof validate --manifest <path>\`\n` +
+    `- Inspect: \`pixelproof inspect --project <dir>\`\n` +
+    `- Capture: \`pixelproof capture --manifest <path> --out <dir>\`\n` +
+    `- Compare: \`pixelproof compare --id <id> --reference <path> --actual <path> --out <dir> --regions\`\n` +
+    `- Iterate: \`pixelproof iterate --manifest <path> --actual-dir <dir> --out <dir>\`\n` +
+    `- Progress: \`pixelproof progress --state <statePath>\`\n` +
+    `- Report: \`pixelproof report --summary <summaryPath> --out <dir>\`\n`;
+
+  try {
+    if (fs.existsSync(targetFile)) {
+      const existing = fs.readFileSync(targetFile, "utf8");
+      if (!existing.includes("PixelProof Visual Verification")) {
+        fs.appendFileSync(targetFile, snippet, "utf8");
+      }
+      return {
+        agent: agentName,
+        targetPath: targetFile,
+        status: "updated",
+        message: `Updated ${targetFile} with PixelProof instructions for ${agentName}.`,
+      };
+    } else {
+      fs.writeFileSync(targetFile, `# ${fileName}\n${snippet}`, "utf8");
+      return {
+        agent: agentName,
+        targetPath: targetFile,
+        status: "installed",
+        message: `Created ${targetFile} with PixelProof instructions for ${agentName}.`,
+      };
+    }
+  } catch (err: any) {
+    return {
+      agent: agentName,
+      targetPath: targetFile,
+      status: "failed",
+      message: `Failed to install for ${agentName}: ${err.message}`,
+    };
+  }
+}
+
 export function installSkill(options: InstallSkillOptions = {}): InstallResult[] {
   const agent = options.agent ?? "all";
   const projectDir = options.projectDir ?? process.cwd();
@@ -158,6 +252,15 @@ export function installSkill(options: InstallSkillOptions = {}): InstallResult[]
   }
   if (agent === "cursor" || agent === "all") {
     results.push(installForCursor(skillContent, projectDir));
+  }
+  if (agent === "copilot") {
+    results.push(installForCopilot(projectDir));
+  }
+  if (agent === "opencode") {
+    results.push(installForAgentsMarkdown("AGENTS.md", "opencode", projectDir));
+  }
+  if (agent === "codex") {
+    results.push(installForAgentsMarkdown("AGENTS.md", "codex", projectDir));
   }
 
   return results;

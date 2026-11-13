@@ -809,7 +809,7 @@ Usage:
   pixelproof install-skill [options]
 
 Options:
-  --agent <agent>    Target agent: antigravity, claude, cursor, copilot, all (default: all)
+  --agent <agent>    Target agent: antigravity, claude, cursor, copilot, opencode, codex, all (default: all)
   --dir <path>       Target project directory (default: current directory)
   --global           Install globally for current user (Antigravity default: ~/.gemini/config/skills/pixelproof)
   --help, -h         Show help for install-skill command
