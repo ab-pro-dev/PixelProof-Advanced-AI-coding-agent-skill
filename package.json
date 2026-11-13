@@ -1,19 +1,53 @@
 {
-  "name": "pixelproof",
+  "name": "pixelproof-ui",
   "version": "0.1.0",
-  "private": true,
+  "description": "Deterministic visual verification toolkit and AI coding-agent skill for multi-page UI reconstruction",
   "type": "module",
   "bin": {
-    "pixelproof": "./dist/src/cli/index.js"
+    "pixelproof": "./dist/src/cli/index.js",
+    "pixelproof-ui": "./dist/src/cli/index.js"
   },
   "scripts": {
     "build": "tsc",
     "doctor": "node ./dist/src/cli/index.js doctor",
     "test": "node --import \"data:text/javascript,process.env.NODE_ENV='test'\" --test \"dist/tests/**/*.test.js\""
   },
+  "dependencies": {
+    "playwright": "1.64.1"
+  },
   "devDependencies": {
     "@types/node": "^22.13.0",
-    "playwright": "1.64.1",
     "typescript": "^5.7.0"
-  }
+  },
+  "files": [
+    "dist/src/",
+    "pixelproof_image/*.py",
+    "templates/",
+    "schemas/",
+    "config/",
+    "SKILL.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "visual-regression",
+    "visual-verification",
+    "agent-skills",
+    "antigravity",
+    "claude-code",
+    "cursor",
+    "playwright",
+    "pixel-perfect",
+    "screenshot-to-code"
+  ],
+  "author": "ab-pro-dev",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ab-pro-dev/PixelProof-Advanced-AI-coding-agent-skill.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ab-pro-dev/PixelProof-Advanced-AI-coding-agent-skill/issues"
+  },
+  "homepage": "https://github.com/ab-pro-dev/PixelProof-Advanced-AI-coding-agent-skill#readme"
 }

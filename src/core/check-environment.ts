@@ -16,9 +16,12 @@
 import { execFile } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export type CheckState = "passed" | "failed" | "unavailable" | "skipped";
 
@@ -180,13 +183,15 @@ export async function probeChromium(
  * Probe built TypeScript CLI output (dist/src/cli/index.js).
  */
 export function probeDist(distPath?: string): CheckResult {
-  const target = distPath ?? path.resolve(process.cwd(), "dist/src/cli/index.js");
+  const localTarget = path.resolve(process.cwd(), "dist/src/cli/index.js");
+  const packageTarget = path.resolve(__dirname, "../cli/index.js");
+  const target = distPath ?? (fs.existsSync(localTarget) ? localTarget : packageTarget);
   if (fs.existsSync(target)) {
     return {
       name: "dist",
       required: true,
       state: "passed",
-      detail: "dist/src/cli/index.js built and present",
+      detail: `${path.basename(path.dirname(target))}/${path.basename(target)} built and present`,
     };
   }
   return {

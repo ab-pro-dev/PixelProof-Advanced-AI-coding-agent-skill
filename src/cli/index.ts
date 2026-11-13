@@ -20,6 +20,7 @@ import { captureFromManifest } from "../browser/capture-manifest.js";
 import type { WaitUntilStrategy } from "../browser/capture.js";
 import { checkEnvironment, formatHumanReport } from "../core/check-environment.js";
 import { makeError } from "../core/hints.js";
+import { installSkill, type SupportedAgent } from "../core/install-skill.js";
 import { runPythonCli } from "../core/manifest.js";
 
 let config: ReturnType<typeof loadConfig>;
@@ -50,6 +51,9 @@ Available Commands:
   iterate    Record one refinement iteration and compute deltas vs previous iteration
   progress   Evaluate iteration progress, regressions, and stop reasons
   doctor     Check runtime environment, dependencies, and browser capabilities
+
+Setup:
+    install-skill  Install agent skill for Antigravity, Claude, Cursor, Copilot
 
 Options:
   --config <path>    Configuration JSON (default: config/default.json, else built-in defaults)
@@ -798,6 +802,48 @@ function runInit(args: string[]): void {
   process.exit(result.status === "created" ? 0 : 1);
 }
 
+function printInstallSkillHelp(): void {
+  console.log(`Install PixelProof agent skill instructions for AI coding agents.
+
+Usage:
+  pixelproof install-skill [options]
+
+Options:
+  --agent <agent>    Target agent: antigravity, claude, cursor, copilot, all (default: all)
+  --dir <path>       Target project directory (default: current directory)
+  --global           Install globally for current user (Antigravity default: ~/.gemini/config/skills/pixelproof)
+  --help, -h         Show help for install-skill command
+`);
+  process.exit(0);
+}
+
+function runInstallSkill(args: string[]): void {
+  const { values } = parseArgs({
+    args,
+    options: {
+      agent: { type: "string", default: "all" },
+      dir: { type: "string" },
+      global: { type: "boolean", default: true },
+      help: { type: "boolean", short: "h" },
+    },
+    strict: false,
+    allowPositionals: true,
+  });
+
+  if (values.help) {
+    printInstallSkillHelp();
+  }
+
+  const results = installSkill({
+    agent: values.agent as SupportedAgent,
+    projectDir: typeof values.dir === "string" ? values.dir : undefined,
+    global: typeof values.global === "boolean" ? values.global : true,
+  });
+
+  console.log(JSON.stringify({ status: "completed", results }, null, 2));
+  process.exit(0);
+}
+
 async function main(): Promise<void> {
   const rawArgs = process.argv.slice(2);
   let configPath: string | undefined;
@@ -873,6 +919,11 @@ async function main(): Promise<void> {
 
   if (firstArg === "doctor") {
     await runDoctor(rawArgs.slice(1));
+    return;
+  }
+
+  if (firstArg === "install-skill" || firstArg === "setup") {
+    runInstallSkill(rawArgs.slice(1));
     return;
   }
 

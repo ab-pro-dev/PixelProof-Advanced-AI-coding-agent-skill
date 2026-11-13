@@ -8,10 +8,15 @@
  */
 
 import { execFile } from "node:child_process";
+import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { makeError } from "./hints.js";
 
 const execFileAsync = promisify(execFile);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const packageRoot = path.resolve(__dirname, "../../..");
 
 export interface LoadManifestOptions {
   pythonCommand?: string; // default "python" (AGENT PROPOSAL)
@@ -88,10 +93,14 @@ export async function runPythonCli(
   let exitCode = 0;
 
   try {
+    const pythonPath = [packageRoot, process.env.PYTHONPATH].filter(Boolean).join(path.delimiter);
     const res = await execFileAsync(
       pythonCommand,
       ["-m", "pixelproof_image.cli", ...cliArgs],
-      { shell: false }
+      {
+        shell: false,
+        env: { ...process.env, PYTHONPATH: pythonPath },
+      }
     );
     stdout = res.stdout;
     exitCode = 0;

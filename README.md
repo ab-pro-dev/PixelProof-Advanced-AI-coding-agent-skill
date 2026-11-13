@@ -39,6 +39,36 @@ Run the automated test suite:
 
 ## Installation
 
+PixelProof is published on npm as [`pixelproof-ui`](https://www.npmjs.com/package/pixelproof-ui).
+
+```bash
+# Global install (recommended for CLI and agent skills)
+npm install -g pixelproof-ui
+
+# Verify runtime environment and dependencies
+pixelproof doctor
+```
+
+Or run directly with `npx`:
+
+```bash
+npx pixelproof-ui doctor
+```
+
+### Install Agent Skill across AI Assistants
+
+PixelProof provides a built-in skill installer that configures workflow instructions for multiple AI coding tools:
+
+```bash
+# Install skill for all supported agents (Antigravity, Claude Code, Cursor)
+pixelproof install-skill
+
+# Or target a specific assistant
+pixelproof install-skill --agent antigravity   # Global ~/.gemini/config/skills/pixelproof/SKILL.md
+pixelproof install-skill --agent claude        # Adds workflow instructions to CLAUDE.md
+pixelproof install-skill --agent cursor        # Creates .cursor/rules/pixelproof.mdc
+```
+
 See [docs/install.md](docs/install.md) for step-by-step setup instructions on Linux, macOS, and Windows.
 See [docs/decisions.md](docs/decisions.md) for owner-delegated decisions resolving architectural questions Q1 to Q9.
 
@@ -189,5 +219,9 @@ pixelproof capture --manifest examples/real-app/references/references.json --out
 ## Vue Example
 
 `examples/vue-app/` is a minimal Vite + Vue application with pinned exact dependencies, plain CSS, system fonts, and two routes (`/` and `/about` handled via path check without a router library). Serve it with `npm run dev` (bound to `127.0.0.1:5176`).
+
+## AuraCommerce Full Showcase Example
+
+`examples/auracommerce/` is a rich, full-featured eCommerce admin dashboard application built with Next.js (App Router), Tailwind CSS, Lucide icons, and Recharts, demonstrating multi-page layout reconstruction and design systems.
 
 
