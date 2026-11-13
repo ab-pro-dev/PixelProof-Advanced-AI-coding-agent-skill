@@ -1,227 +1,163 @@
-# PixelProof
+# PixelProof UI
 
-> **Status: v0.1.0 preview** — Known limits: tested only on Linux, other coding agents remain untested, and schemas, flags, and report shape are proposals and may change.
+> **Status: v0.1.0 (preview)** — Open-source deterministic visual verification toolkit and AI coding-agent skill for multi-page UI reconstruction.
 
-PixelProof is an AI coding-agent skill and deterministic visual verification toolkit designed to reconstruct multi-page websites from screenshot references, compare browser captures against references, and iteratively refine the resulting code.
+[![npm version](https://img.shields.io/npm/v/pixelproof-ui.svg)](https://www.npmjs.com/package/pixelproof-ui)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-## Current Status
+**PixelProof** bridges the gap between screenshot designs and working frontend code. It equips AI coding agents (Google Antigravity, Claude Code, Cursor, OpenCode, Codex) with a deterministic, closed-loop visual feedback system to reconstruct pixel-accurate, multi-page websites and automatically verify their work.
 
-Phases 1 and 2 done; Phase 3 evidence tools done; agent loop instructions in SKILL.md.
+---
 
-The Phase 1 comparison engine, read-only project inspector, manifest validator, and report generator are fully implemented, along with Phase 2 Playwright browser capture and Phase 3 refinement iteration state tracking, delta calculations, region grid metrics, priority scoring, and stall/regression/stop-reason evaluation. Actionable error hints (`error.hint`) provide next-step guidance on all failure results across Python and TypeScript (spec §11). Planned future features—including perceptual SSIM, DOM geometry checks, and the autonomous multi-iteration refinement loop (`run`)—are NOT BUILT YET (Phase 3/4).
+## The Big Idea
 
-## Run the Demo
+When AI agents build user interfaces from screenshot images, they usually "guess" visual accuracy without ever looking at the running page. This results in subtle padding bugs, broken flexbox alignments, incorrect color shades, and displaced components.
 
-Run the end-to-end Phase 1 demonstration pipeline with a single command:
+**PixelProof changes that:**
+1. **Captures Real Output**: Uses Playwright to render and photograph actual browser pages on localhost with exact viewport and scale parameters.
+2. **Deterministic Mathematical Comparison**: Computes exact pixel deltas and Mean Absolute Error (MAE) without heuristic guesswork or hallucination.
+3. **Region-Based Heatmaps & Priority Scoring**: Divides pages into grid regions and ranks visual defects by visual weight ($P = A \times S \times V$), telling the agent exactly *which* section (header, hero, card grid) needs fixing first.
+4. **Iterative Refinement Loop**: Tracks improvements across iterations, catches visual regressions, and halts when differences are resolved or progress stalls.
+5. **Separation of Evidence**: Maintains an uncompromised distinction between cold numerical measurements and subjective agent observations.
 
-```bash
-python scripts/demo_phase1.py
+```text
+┌─────────────────────┐       ┌──────────────────────┐       ┌─────────────────────┐
+│  Screenshot Images  │ ───>  │  Playwright Browser  │ ───>  │ PixelProof Compare  │
+│  (references.json)  │       │  (Localhost Capture) │       │ (MAE & Diff Matrix) │
+└─────────────────────┘       └──────────────────────┘       └──────────┬──────────┘
+                                                                        │
+┌─────────────────────┐       ┌──────────────────────┐                  │
+│ Reconstructed Code  │ <───  │ Agent Refinement     │ <────────────────┘
+│ (Pixel-Accurate)    │       │ (Region-by-Region)   │   (Ranked Diff Artifacts)
+└─────────────────────┘       └──────────────────────┘
 ```
 
-Run the end-to-end Phase 2 multi-route browser capture and comparison pipeline:
-
-```bash
-node scripts/demo_phase2.mjs
-```
-
-## Testing
-
-Run the automated test suite:
-
-- Python test suite (64 unit & CLI tests):
-  ```bash
-  .venv/bin/python -m pytest -q
-  ```
-- Node environment smoke test:
-  ```bash
-  npm test
-  ```
+---
 
 ## Installation
 
 PixelProof is published on npm as [`pixelproof-ui`](https://www.npmjs.com/package/pixelproof-ui).
 
-```bash
-# Global install (recommended for CLI and agent skills)
-npm install -g pixelproof-ui
+### 1. Install Globally (Recommended)
 
-# Verify runtime environment and dependencies
+```bash
+npm install -g pixelproof-ui
+```
+
+### 2. Verify Your Environment
+
+PixelProof uses Node.js (>= 20) for orchestration and Python (>= 3.12) with Playwright for deterministic image comparison. Run the built-in diagnostic doctor:
+
+```bash
 pixelproof doctor
 ```
 
-Or run directly with `npx`:
+*(You can also run it instantly without global installation via `npx pixelproof-ui doctor`)*.
+
+---
+
+## Install Agent Skill across AI Assistants
+
+PixelProof includes a one-command skill installer that configures workflow rules and activation instructions across all major AI coding platforms:
 
 ```bash
-npx pixelproof-ui doctor
-```
-
-### Install Agent Skill across AI Assistants
-
-PixelProof provides a built-in skill installer that configures workflow instructions for multiple AI coding tools:
-
-```bash
-# Install skill for all supported agents (Antigravity, Claude Code, Cursor)
+# Install skill for all supported agents
 pixelproof install-skill
 
 # Or target a specific assistant
 pixelproof install-skill --agent antigravity   # Global ~/.gemini/config/skills/pixelproof/SKILL.md
-pixelproof install-skill --agent claude        # Adds workflow instructions to CLAUDE.md
-pixelproof install-skill --agent cursor        # Creates .cursor/rules/pixelproof.mdc
+pixelproof install-skill --agent claude        # Configures project CLAUDE.md
+pixelproof install-skill --agent cursor        # Generates .cursor/rules/pixelproof.mdc
+pixelproof install-skill --agent copilot       # Generates .github/copilot-instructions.md
+pixelproof install-skill --agent opencode      # Generates AGENTS.md
+pixelproof install-skill --agent codex         # Generates AGENTS.md
 ```
 
-See [docs/install.md](docs/install.md) for step-by-step setup instructions on Linux, macOS, and Windows.
-See [docs/decisions.md](docs/decisions.md) for owner-delegated decisions resolving architectural questions Q1 to Q9.
+The installer is **idempotent**: re-running it verifies your configuration and reports `already_installed` without creating duplicate entries.
+
+---
+
+## The Mandatory 8-Step Reconstruction Workflow
+
+When an AI agent is tasked with reconstructing a website from screenshots, it follows PixelProof's mandatory workflow:
+
+1. **Register References (`pixelproof init` / `validate`)**: Index screenshot files and viewport dimensions into `references.json`.
+2. **Inspect Project (`pixelproof inspect`)**: Detect framework (React, Next.js, Vue, plain HTML), build scripts, styling system, and Git status in read-only mode.
+3. **Analyze Design**: Read reference screenshots and compile `design-spec.md` (spacing, typography, layout tokens).
+4. **Implement Code**: Scaffold components and routes matching existing project conventions.
+5. **Capture Browser (`pixelproof capture`)**: Launch headless Chromium via Playwright and take deterministic screenshots of all routes.
+6. **Compare & Rank (`pixelproof compare`)**: Produce difference overlays, diff masks, and calculate region-by-region defect scores.
+7. **Iterate & Refine (`pixelproof iterate` & `progress`)**: Apply targeted CSS/layout fixes starting with the highest-ranked component. Re-capture and verify progress deltas.
+8. **Verify & Report (`pixelproof report`)**: Generate audit-ready Markdown and JSON evidence reports summarizing the visual delta.
+
+---
+
+## CLI Reference
+
+All commands support `--help` for full argument details.
+
+| Command | Purpose |
+| :--- | :--- |
+| `pixelproof init` | Scaffold starter `references.json`, folder structure, and config |
+| `pixelproof doctor` | Inspect Node, Python, Pillow, NumPy, and Playwright Chromium readiness |
+| `pixelproof install-skill` | Configure AI agent rules (Antigravity, Claude Code, Cursor, Copilot, OpenCode, Codex) |
+| `pixelproof validate` | Validate `references.json` schema, viewports, and image readability |
+| `pixelproof inspect` | Read-only inspection of target frontend stack, package manager, and routes |
+| `pixelproof capture` | Deterministic Playwright multi-route screenshot capture |
+| `pixelproof compare` | Compute MAE, differing pixel count, diff masks, and 4x4 region rankings |
+| `pixelproof iterate` | Record iteration deltas (`improved`, `worse`, `same`) against previous runs |
+| `pixelproof progress` | Evaluate stall detection, visual regressions, and iteration stop conditions |
+| `pixelproof report` | Build final audit reports (`report.md` and `report.json`) |
+
+---
+
+## Included Examples & Test Fixtures
+
+PixelProof includes ready-to-test applications in the `examples/` directory:
+
+- **`examples/auracommerce/`**: Full-scale eCommerce admin dashboard built with Next.js (App Router), Tailwind CSS, Lucide icons, and Recharts. Demonstrates complex multi-page layout reconstruction.
+- **`examples/real-app/`**: Minimal Vite + React application with multi-route references.
+- **`examples/nextjs-app/`**: Minimal Next.js application with pinned dependencies and plain CSS.
+- **`examples/vue-app/`**: Minimal Vite + Vue 3 application with route simulation.
+- **`examples/plain-html/`**: Static HTML/CSS fixture (zero JS, system fonts) for baseline capture tests.
+
+---
+
+## Development & Testing
+
+Run unit tests and end-to-end verification pipelines:
+
+```bash
+# Run Python visual comparison tests
+.venv/bin/python -m pytest -q
+
+# Run Node.js CLI & Playwright capture tests
+npm test
+
+# Run Phase 1 demo (CLI image comparison pipeline)
+python scripts/demo_phase1.py
+
+# Run Phase 2 demo (Full browser capture and compare)
+node scripts/demo_phase2.mjs
+```
+
+---
 
 ## Documentation
 
-- [docs/architecture.md](docs/architecture.md): Six core components, separation rule, and Python/TypeScript split (§4).
-- [docs/security.md](docs/security.md): Localhost restrictions, path containment, and secret protection (§13, §17).
-- [docs/troubleshooting.md](docs/troubleshooting.md): Diagnosing common errors and environment issues (§11, §19).
-- [docs/framework-detection.md](docs/framework-detection.md): Framework, script, and styling detection by `inspect` (§5.2, §10).
-- [docs/agent-portability.md](docs/agent-portability.md): Portable agent instructions and generic adapter conventions (§9).
-- [docs/workflow.md](docs/workflow.md): Mandatory 8-step visual reconstruction workflow (§5).
-- [docs/visual-analysis.md](docs/visual-analysis.md): Visual comparison, region grids, and priority heuristics (§7, §8).
-- [docs/install.md](docs/install.md): Installation guide and environment requirements (§19).
-- [docs/decisions.md](docs/decisions.md): Owner-delegated architectural decisions Q1–Q9.
-- [docs/release-checklist.md](docs/release-checklist.md): Public release verification checklist (§15, §19).
-- [docs/roadmap.md](docs/roadmap.md): Four-phase development roadmap (§19).
-- [docs/benchmarks.md](docs/benchmarks.md): Measured command execution times and determinism (§18).
+Comprehensive guides are available in [`docs/`](docs/):
 
-## Available CLI Commands
+- [docs/workflow.md](docs/workflow.md): The full 8-step visual reconstruction protocol.
+- [docs/visual-analysis.md](docs/visual-analysis.md): Mathematical formulas for MAE, region grids, and priority scoring ($P$).
+- [docs/architecture.md](docs/architecture.md): Core separation of concerns and Python/TypeScript architecture.
+- [docs/security.md](docs/security.md): Strict localhost-only network policy and path confinement rules.
+- [docs/framework-detection.md](docs/framework-detection.md): Framework and build script heuristic rules.
+- [docs/install.md](docs/install.md): In-depth manual installation guide.
+- [docs/benchmarks.md](docs/benchmarks.md): Performance benchmarks and determinism measurements.
+- [docs/troubleshooting.md](docs/troubleshooting.md): Common error codes and resolution steps.
 
-### TypeScript CLI (`pixelproof`)
+---
 
-The TypeScript CLI provides automated manifest validation, project inspection, browser capture, visual comparison, and final reporting:
+## License
 
-1. **Manifest Validation:**
-   ```bash
-   pixelproof validate --manifest PATH [--python CMD]
-   ```
-   Validates reference manifest schema, viewport dimensions, deviceScaleFactor, and image readability.
-
-2. **Project Inspection:**
-   ```bash
-   pixelproof inspect --project DIR [--python CMD]
-   ```
-   Inspects target project framework, package manager, build scripts, styling, assets, and Git status in read-only mode.
-
-3. **Browser Capture:**
-   ```bash
-   pixelproof capture --manifest PATH --out DIR [--base-url URL] [--overwrite] [--ready-selector SEL] [--wait-until load|domcontentloaded|networkidle] [--python CMD]
-   ```
-   Captures deterministic screenshots for every reference registered in a manifest using Playwright, reporting JSON results to stdout.
-
-4. **Image Comparison & Visual Artifacts:**
-   ```bash
-   pixelproof compare --id ID --reference PATH --actual PATH --out DIR [--overwrite] [--regions] [--grid RxC] [--weights PATH] [--python CMD]
-   ```
-   Computes exact Mean Absolute Error (MAE), counts differing pixels, generates overlay, diff, and side-by-side visual artifacts, and optionally computes region-based grid measurements (`--regions`) with deterministic ranking (measured-only by `areaFraction * diffRatio`, no severity labels or thresholds) and optional owner-supplied region weights (`--weights PATH`, applying visual importance $V$ as `weightedScore = score * weight`). See [docs/visual-analysis.md](docs/visual-analysis.md) for details on region grid metrics, owner-supplied weights, and the priority scoring heuristic ($P$).
-
-5. **Final Report Generation:**
-   ```bash
-   pixelproof report --summary PATH --out DIR [--overwrite] [--python CMD]
-   ```
-   Generates machine-readable `report.json` and human-readable `report.md` covering all specification sections.
-
-6. **Refinement Iteration Tracking:**
-   ```bash
-   pixelproof iterate --manifest PATH --actual-dir DIR --out DIR [--overwrite] [--python CMD]
-   ```
-   Records one refinement iteration and evaluates progress (MAE and differing pixels deltas) relative to the previous iteration under `<out>/state/iterations.json`. Iteration state + deltas, agent-driven (AGENT PROPOSAL pending Q1/Q8).
-
-7. **Iteration Progress & Stop Reasons:**
-   ```bash
-   pixelproof progress --state PATH [--stall-window N] [--python CMD]
-   ```
-   Evaluates iteration progress, regressions, stall conditions, and stop reasons from state file in read-only mode. Stall/regression/stop reasons (AGENT PROPOSAL pending Q1/Q8).
-
-8. **Environment Doctor & Capability Verification:**
-   ```bash
-   pixelproof doctor [--json] [--python CMD]
-   ```
-   Evaluates runtime environment, Node.js version, Python version, required packages, and Chromium launchability against specification requirements (§9.3, §19). See [docs/install.md](docs/install.md) for installation instructions.
-
-9. **Project Initialization (built):**
-
-   `pixelproof init [--dir DIR] [--overwrite]`: built; creates `references.json`, `references/.gitkeep`, and `pixelproof.config.json` (default DIR: cwd). Existing files are refused without `--overwrite`. Add your 1280×720 PNG at `references/home-desktop.png` before validating; until then, `validate` reports `image_missing`. Pass `--config pixelproof.config.json` to use the generated configuration.
-
-Planned TypeScript CLI commands:
-
-- `pixelproof run`: NOT BUILT YET (Phase 3 / spec §11)
-
-### Python CLI (`pixelproof_image.cli`)
-
-Phase 1 tools are invoked via the Python CLI (`pixelproof_image.cli`):
-
-1. **Manifest Validation:**
-   ```bash
-   python -m pixelproof_image.cli validate --manifest PATH
-   ```
-   Validates reference manifest schema, viewport dimensions, deviceScaleFactor, and image readability.
-
-2. **Project Inspection:**
-   ```bash
-   python -m pixelproof_image.cli inspect --project DIR
-   ```
-   Inspects target project framework, package manager, build scripts, styling, assets, and Git status in read-only mode without modifying files.
-
-3. **Image Comparison & Visual Artifacts:**
-   ```bash
-   python -m pixelproof_image.cli compare --id ID --reference PATH --actual PATH --out DIR [--overwrite] [--regions] [--grid RxC] [--weights PATH]
-   ```
-   Computes exact Mean Absolute Error (MAE), counts differing pixels, generates overlay, diff, and side-by-side visual artifacts, and optionally computes region-based grid measurements (`--regions`) with deterministic ranking (measured-only by `areaFraction * diffRatio`, no severity labels or thresholds) and optional owner-supplied region weights (`--weights PATH`, applying visual importance $V$ as `weightedScore = score * weight`).
-
-4. **Final Report Generation:**
-   ```bash
-   python -m pixelproof_image.cli report --summary PATH --out DIR [--overwrite]
-   ```
-   Generates machine-readable `report.json` and human-readable `report.md` covering all 10 specification sections and enforcing honest completion reporting.
-
-5. **Refinement Iteration Tracking:**
-   ```bash
-   python -m pixelproof_image.cli iterate --manifest PATH --actual-dir DIR --out DIR [--overwrite]
-   ```
-   Records one refinement iteration and evaluates progress (MAE and differing pixels deltas) relative to the previous iteration under `<out>/state/iterations.json`. Iteration state + deltas, agent-driven (AGENT PROPOSAL pending Q1/Q8).
-
-6. **Iteration Progress & Stop Reasons:**
-   ```bash
-   python -m pixelproof_image.cli progress --state PATH [--stall-window N]
-   ```
-   Evaluates iteration progress, regressions, stall conditions, and stop reasons from state file in read-only mode. Stall/regression/stop reasons (AGENT PROPOSAL pending Q1/Q8).
-
-## Schemas
-
-PixelProof maintains JSON Schema (2020-12) contracts for manifest inputs, comparison outputs, and run configurations:
-
-- `schemas/references.schema.json`: Contract for input reference manifests (`references.json`), including optional owner-supplied `regionWeights` (`grid` and `weights` matrix).
-- `schemas/comparison-report.schema.json`: Contract for visual comparison tool outputs (`compared` and `failed` results).
-- `schemas/iteration-state.schema.json`: Contract for refinement iteration state files (`iterations.json`).
-- `schemas/config.schema.json`: Contract for run configuration options (validating `config/default.json`; marked NOT BUILT YET pending Phase 3).
-
-## Real App Test
-
-`examples/real-app/` is a minimal Vite + React application with two routes for manual end-to-end testing against the PixelProof CLI:
-
-```bash
-cd examples/real-app && npm install && npm run dev
-# In another terminal:
-pixelproof capture --manifest examples/real-app/references/references.json --out /tmp/real-app-out
-```
-
-## Plain HTML Example
-
-`examples/plain-html/` is a static HTML/CSS fixture (no JavaScript, system fonts) with two routes (`/` and `/about`). Serve it with `python -m http.server 5174 --bind 127.0.0.1`.
-
-## Next.js Example
-
-`examples/nextjs-app/` is a minimal Next.js application with pinned exact dependencies, plain CSS, system fonts, and two routes (`/` and `/about`). Serve it with `npm run dev` (bound to `127.0.0.1:5175`).
-
-## Vue Example
-
-`examples/vue-app/` is a minimal Vite + Vue application with pinned exact dependencies, plain CSS, system fonts, and two routes (`/` and `/about` handled via path check without a router library). Serve it with `npm run dev` (bound to `127.0.0.1:5176`).
-
-## AuraCommerce Full Showcase Example
-
-`examples/auracommerce/` is a rich, full-featured eCommerce admin dashboard application built with Next.js (App Router), Tailwind CSS, Lucide icons, and Recharts, demonstrating multi-page layout reconstruction and design systems.
-
-
+MIT © [ab-pro-dev](https://github.com/ab-pro-dev)
