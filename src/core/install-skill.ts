@@ -95,6 +95,7 @@ export function installForClaude(projectDir = process.cwd()): InstallResult {
   const targetFile = path.join(projectDir, "CLAUDE.md");
   const snippet = `\n\n## PixelProof Visual Verification Workflow\n` +
     `When reconstructing UI from screenshot references, use the PixelProof CLI (\`pixelproof-ui\`):\n` +
+    `- Auto-register: If \`references.json\` is missing, auto-discover all screenshot images in \`references/\`, detect dimensions, and generate \`references.json\`.\n` +
     `- Validate: \`pixelproof validate --manifest <path>\`\n` +
     `- Inspect: \`pixelproof inspect --project <dir>\`\n` +
     `- Capture: \`pixelproof capture --manifest <path> --out <dir>\`\n` +
@@ -195,6 +196,7 @@ export function installForCopilot(projectDir = process.cwd()): InstallResult {
   const targetFile = path.join(targetDir, "copilot-instructions.md");
   const snippet = `\n\n## PixelProof Visual Verification Workflow\n` +
     `When reconstructing UI from screenshot references, use the PixelProof CLI (\`pixelproof-ui\`):\n` +
+    `- Auto-register: If \`references.json\` is missing, auto-discover all screenshot images in \`references/\`, detect dimensions, and generate \`references.json\`.\n` +
     `- Validate: \`pixelproof validate --manifest <path>\`\n` +
     `- Inspect: \`pixelproof inspect --project <dir>\`\n` +
     `- Capture: \`pixelproof capture --manifest <path> --out <dir>\`\n` +
@@ -245,6 +247,7 @@ export function installForAgentsMarkdown(fileName: string, agentName: string, pr
   const targetFile = path.join(projectDir, fileName);
   const snippet = `\n\n## PixelProof Visual Verification Workflow\n` +
     `When reconstructing UI from screenshot references, use the PixelProof CLI (\`pixelproof-ui\`):\n` +
+    `- Auto-register: If \`references.json\` is missing, auto-discover all screenshot images in \`references/\`, detect dimensions, and generate \`references.json\`.\n` +
     `- Validate: \`pixelproof validate --manifest <path>\`\n` +
     `- Inspect: \`pixelproof inspect --project <dir>\`\n` +
     `- Capture: \`pixelproof capture --manifest <path> --out <dir>\`\n` +

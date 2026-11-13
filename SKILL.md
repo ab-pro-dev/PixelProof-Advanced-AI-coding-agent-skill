@@ -35,7 +35,7 @@ Do not activate PixelProof for backend-only tasks, non-visual refactorings, or p
 ## 3. The Mandatory Workflow
 
 Follow the §5 execution workflow in order:
-- **Step 01: Register the references** — BUILT (`pixelproof validate`, `pixelproof init`); automated reference discovery (NOT BUILT YET).
+- **Step 01: Register the references** — BUILT (`pixelproof validate`, `pixelproof init`); Automated reference discovery: If `references.json` is missing, the agent auto-scans `references/` for screenshot images, reads their dimensions, infers routes, and writes `references.json` automatically. The user never needs to manually write JSON.
 - **Step 02: Inspect the project** — BUILT (`pixelproof inspect`); token/route extractors (NOT BUILT YET).
 - **Step 03: Analyze the visual design** — Agent step (`design-spec.md`); automated design parser (NOT BUILT YET).
 - **Step 04: Implement the pages** — Agent step editing code; template scaffolders (NOT BUILT YET).
@@ -88,7 +88,7 @@ Prioritize visual defects using the §8.2 default sequence (AGENT PROPOSAL pendi
 
 ### Agent loop (§8.1, §19)
 1. Owner starts the application; agent never starts project commands (connect-only, localhost only).
-2. Validate manifest: `pixelproof validate --manifest <path>`
+2. Register & Validate manifest: If `references.json` does not exist, scan `references/` for all screenshot images, read their dimensions, infer routes from filenames (`home`/`index` -> `/`, others -> `/[name]`), and create `references.json` automatically. Then run `pixelproof validate --manifest <path>`.
 3. Inspect project: `pixelproof inspect --project <dir>`
 4. Read references, write `design-spec.md`.
 5. Implement pages following existing project architecture.
