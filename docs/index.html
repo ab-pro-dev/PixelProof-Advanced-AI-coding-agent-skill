@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PixelProof — Deterministic Visual Verification for AI Coding Agents</title>
+  <meta name="description" content="AI coding-agent skill and deterministic visual verification toolkit for reconstructing multi-page websites from screenshot references with zero visual hallucination.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2306b6d4'><path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/></svg>">
+  <link rel="stylesheet" href="./styles.css">
+  <!-- Markdown parser for interactive docs portal -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="#" class="brand">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 12h5l3 5 4-10 3 5h5"/>
+          </svg>
+        </div>
+        <span>PixelProof</span>
+        <span class="brand-badge">UI</span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="#simulator">Live Demo</a></li>
+        <li><a href="#workflow">Workflow</a></li>
+        <li><a href="#agents">Agents</a></li>
+        <li><a href="#commands">CLI</a></li>
+        <li><a href="#docs">Documentation</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a href="https://www.npmjs.com/package/pixelproof-ui" target="_blank" class="btn btn-secondary" style="font-family:var(--font-mono); font-size:0.8rem;">
+          npm v0.1.0
+        </a>
+        <a href="https://github.com/ab-pro-dev/PixelProof-Advanced-AI-coding-agent-skill" target="_blank" class="btn btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+          </svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <header class="hero">
+    <div class="container">
+      <div class="hero-pill">
+        <span>✨ v0.1.0 Preview</span>
+        <span style="opacity:0.4;">|</span>
+        <span>Universal Multi-Agent Verification</span>
+      </div>
+
+      <h1 class="hero-title">
+        Deterministic Visual Verification <br>
+        <span class="gradient-text">for AI Coding Agents</span>
+      </h1>
+
+      <p class="hero-subtitle">
+        Turn screenshot designs into pixel-accurate, multi-page frontend code. 
+        Give agents a closed-loop Playwright capture engine and mathematical visual comparison.
+      </p>
+
+      <div class="hero-cta">
+        <a href="#simulator" class="btn btn-primary" style="padding:0.75rem 1.5rem; font-size:1rem;">
+          Try Interactive Demo
+        </a>
+        <a href="#workflow" class="btn btn-secondary" style="padding:0.75rem 1.5rem; font-size:1rem;">
+          Explore Workflow
+        </a>
+      </div>
+
+      <!-- Interactive Terminal Box -->
+      <div class="terminal-box">
+        <div class="terminal-header">
+          <div class="terminal-dots">
+            <div class="terminal-dot dot-red"></div>
+            <div class="terminal-dot dot-yellow"></div>
+            <div class="terminal-dot dot-green"></div>
+          </div>
+          <div class="terminal-tabs">
+            <button class="terminal-tab active" data-cmd="install">install</button>
+            <button class="terminal-tab" data-cmd="skill">install-skill</button>
+            <button class="terminal-tab" data-cmd="doctor">doctor</button>
+            <button class="terminal-tab" data-cmd="npx">npx</button>
+          </div>
+        </div>
+        <div class="terminal-body">
+          <div class="terminal-code">
+            <span class="prompt">$</span>
+            <span id="terminal-code-text">npm install -g pixelproof-ui</span>
+          </div>
+          <button class="copy-btn" id="copy-terminal-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            Copy
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats Strip -->
+      <div class="stats-strip">
+        <div class="stat-card">
+          <div class="stat-val">100%</div>
+          <div class="stat-label">Deterministic Verification</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">6+</div>
+          <div class="stat-label">Supported AI Coding Agents</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">54 kB</div>
+          <div class="stat-label">Zero-Bloat NPM Package</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">Zero</div>
+          <div class="stat-label">Manual JSON Editing Needed</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Interactive Visual Verification Simulator -->
+  <section id="simulator" class="section" style="background:var(--bg-secondary); border-top:1px solid var(--border-color); border-bottom:1px solid var(--border-color);">
+    <div class="container">
+      <div class="section-head">
+        <div class="section-tag">Interactive Simulation</div>
+        <h2 class="section-title">See PixelProof in Action</h2>
+        <p class="section-desc">
+          Compare the original design reference against an AI agent's initial attempt, 
+          inspect the mathematical diff heatmap, and watch the verified result.
+        </p>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-controls">
+          <button class="demo-tab-btn active" data-mode="split">1. Split Comparison (Shift Detected)</button>
+          <button class="demo-tab-btn" data-mode="diff">2. Diff Heatmap (Red Mask)</button>
+          <button class="demo-tab-btn" data-mode="grid">3. 4×4 Priority Ranking (P = A·S·V)</button>
+          <button class="demo-tab-btn" data-mode="verified">4. Refined Output (100% Match)</button>
+        </div>
+
+        <div class="demo-stage">
+          <!-- Left Panel: Reference -->
+          <div class="canvas-panel">
+            <div class="panel-title">REFERENCE SCREENSHOT (Target)</div>
+            <div class="panel-content">
+              <div class="mock-ui">
+                <div class="mock-ui-header"></div>
+                <div class="mock-ui-desc"></div>
+                <div class="mock-ui-desc-2"></div>
+                <div class="mock-ui-btn"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Panel: Actual Browser Capture -->
+          <div class="canvas-panel">
+            <div class="panel-title">ACTUAL BROWSER CAPTURE (Playwright)</div>
+            <div class="panel-content" id="actual-panel-container">
+              <!-- Actual Mock Card (with layout shift initially) -->
+              <div class="mock-ui mock-actual" id="actual-mock-card">
+                <div class="mock-ui-header"></div>
+                <div class="mock-ui-desc"></div>
+                <div class="mock-ui-desc-2"></div>
+                <div class="mock-ui-btn"></div>
+              </div>
+
+              <!-- Difference Heatmap Overlay (Hidden by default) -->
+              <div class="diff-highlight" id="diff-overlay-container" style="display:none; width:260px; height:160px;">
+                <span>420 Differing Pixels</span>
+              </div>
+
+              <!-- 4x4 Grid Overlay (Hidden by default) -->
+              <div id="grid-overlay-container" style="display:none; position:absolute; width:260px; height:160px; grid-template-columns:repeat(4, 1fr); grid-template-rows:repeat(4, 1fr); gap:2px; pointer-events:none;">
+                <div style="background:rgba(239,68,68,0.6); border:1px solid #ef4444; border-radius:2px; display:flex; align-items:center; justify-content:center; font-size:9px; font-family:var(--font-mono); color:#fff;">#1</div>
+                <div style="background:rgba(239,68,68,0.3); border:1px solid rgba(239,68,68,0.5); border-radius:2px;"></div>
+                <div style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.2); border-radius:2px;"></div>
+                <div style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.2); border-radius:2px;"></div>
+                <div style="background:rgba(239,68,68,0.4); border:1px solid rgba(239,68,68,0.5); border-radius:2px;"></div>
+                <div style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.2); border-radius:2px;"></div>
+                <div style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.2); border-radius:2px;"></div>
+                <div style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.2); border-radius:2px;"></div>
+                <div style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.2); border-radius:2px;"></div>
+                <div style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.2); border-radius:2px;"></div>
+                <div style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.2); border-radius:2px;"></div>
+                <div style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.2); border-radius:2px;"></div>
+                <div style="background:rgba(239,68,68,0.5); border:1px solid #ef4444; border-radius:2px; display:flex; align-items:center; justify-content:center; font-size:9px; font-family:var(--font-mono); color:#fff;">#2</div>
+                <div style="background:rgba(239,68,68,0.5); border:1px solid #ef4444; border-radius:2px;"></div>
+                <div style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.2); border-radius:2px;"></div>
+                <div style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.2); border-radius:2px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Metric Readout Strip -->
+        <div class="demo-metrics">
+          <div class="metric-item">
+            <span class="metric-name">MEAN ABSOLUTE ERROR (MAE)</span>
+            <span class="metric-val val-red" id="metric-mae">0.0384</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-name">DIFFERING PIXELS</span>
+            <span class="metric-val val-red" id="metric-pixels">420 px</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-name">VERIFICATION STATUS</span>
+            <span class="metric-val val-red" id="metric-status">Layout Shift Detected</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- The 8-Step Reconstruction Workflow -->
+  <section id="workflow" class="section">
+    <div class="container">
+      <div class="section-head">
+        <div class="section-tag">Zero-Config Pipeline</div>
+        <h2 class="section-title">The Mandatory 8-Step Workflow</h2>
+        <p class="section-desc">
+          PixelProof enforces a deterministic verification loop that prevents AI agents 
+          from claiming premature success.
+        </p>
+      </div>
+
+      <div class="workflow-grid">
+        <div class="step-card">
+          <span class="step-number">Step 01</span>
+          <h3 class="step-title">Auto-Discover References</h3>
+          <p class="step-desc">
+            Drop images into <code>references/</code>. The agent inspects dimensions, 
+            infers routes, and writes <code>references.json</code> automatically.
+          </p>
+        </div>
+
+        <div class="step-card">
+          <span class="step-number">Step 02</span>
+          <h3 class="step-title">Inspect Project Stack</h3>
+          <p class="step-desc">
+            <code>pixelproof inspect</code> analyzes framework (React, Next.js, Vue, HTML), 
+            package manager, scripts, and styling in read-only mode.
+          </p>
+        </div>
+
+        <div class="step-card">
+          <span class="step-number">Step 03</span>
+          <h3 class="step-title">Analyze Visual Tokens</h3>
+          <p class="step-desc">
+            The agent writes <code>design-spec.md</code> mapping typography, layout grids, 
+            colors, margins, and component boundaries.
+          </p>
+        </div>
+
+        <div class="step-card">
+          <span class="step-number">Step 04</span>
+          <h3 class="step-title">Implement Code</h3>
+          <p class="step-desc">
+            Agent crafts frontend code matching project architecture and starts 
+            the local dev server.
+          </p>
+        </div>
+
+        <div class="step-card">
+          <span class="step-number">Step 05</span>
+          <h3 class="step-title">Capture Localhost</h3>
+          <p class="step-desc">
+            <code>pixelproof capture</code> uses headless Playwright Chromium to photograph 
+            exact viewports with deterministic rendering.
+          </p>
+        </div>
+
+        <div class="step-card">
+          <span class="step-number">Step 06</span>
+          <h3 class="step-title">Compare & Rank Diff</h3>
+          <p class="step-desc">
+            <code>pixelproof compare --regions</code> computes MAE, differing pixels, 
+            diff masks, and ranks 4×4 regions by defect priority.
+          </p>
+        </div>
+
+        <div class="step-card">
+          <span class="step-number">Step 07</span>
+          <h3 class="step-title">Iterate & Refine</h3>
+          <p class="step-desc">
+            <code>pixelproof iterate</code> tracks deltas vs previous run, detecting stalls 
+            and visual regressions until the page matches.
+          </p>
+        </div>
+
+        <div class="step-card">
+          <span class="step-number">Step 08</span>
+          <h3 class="step-title">Verify & Audit Report</h3>
+          <p class="step-desc">
+            <code>pixelproof report</code> produces audit-ready Markdown and JSON evidence 
+            strictly separating measurements from claims.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Universal AI Agent Support -->
+  <section id="agents" class="section" style="background:var(--bg-secondary); border-top:1px solid var(--border-color); border-bottom:1px solid var(--border-color);">
+    <div class="container">
+      <div class="section-head">
+        <div class="section-tag">Universal Skill Installer</div>
+        <h2 class="section-title">Works with Every Leading AI Agent</h2>
+        <p class="section-desc">
+          Install the skill once and let any assistant run the PixelProof visual verification loop.
+        </p>
+      </div>
+
+      <div class="agents-grid">
+        <div class="agent-card active" data-agent="antigravity">
+          <div class="agent-header">
+            <span class="agent-icon">🚀</span>
+            <span class="agent-name">Google Antigravity</span>
+          </div>
+          <p style="font-size:0.85rem; color:var(--text-secondary);">
+            Global skill registry with standard YAML frontmatter.
+          </p>
+          <div class="agent-path">~/.gemini/config/skills/pixelproof/SKILL.md</div>
+        </div>
+
+        <div class="agent-card" data-agent="claude">
+          <div class="agent-header">
+            <span class="agent-icon">🧠</span>
+            <span class="agent-name">Claude Code</span>
+          </div>
+          <p style="font-size:0.85rem; color:var(--text-secondary);">
+            Configures project CLAUDE.md with verification workflow.
+          </p>
+          <div class="agent-path">CLAUDE.md</div>
+        </div>
+
+        <div class="agent-card" data-agent="cursor">
+          <div class="agent-header">
+            <span class="agent-icon">⚡</span>
+            <span class="agent-name">Cursor</span>
+          </div>
+          <p style="font-size:0.85rem; color:var(--text-secondary);">
+            Generates Cursor rules with globs and prompt instructions.
+          </p>
+          <div class="agent-path">.cursor/rules/pixelproof.mdc</div>
+        </div>
+
+        <div class="agent-card" data-agent="copilot">
+          <div class="agent-header">
+            <span class="agent-icon">🤖</span>
+            <span class="agent-name">GitHub Copilot</span>
+          </div>
+          <p style="font-size:0.85rem; color:var(--text-secondary);">
+            Installs repository-level Copilot instruction set.
+          </p>
+          <div class="agent-path">.github/copilot-instructions.md</div>
+        </div>
+
+        <div class="agent-card" data-agent="opencode">
+          <div class="agent-header">
+            <span class="agent-icon">🌐</span>
+            <span class="agent-name">OpenCode</span>
+          </div>
+          <p style="font-size:0.85rem; color:var(--text-secondary);">
+            Configures open agent instructions in AGENTS.md.
+          </p>
+          <div class="agent-path">AGENTS.md</div>
+        </div>
+
+        <div class="agent-card" data-agent="codex">
+          <div class="agent-header">
+            <span class="agent-icon">💻</span>
+            <span class="agent-name">Codex / Aider</span>
+          </div>
+          <p style="font-size:0.85rem; color:var(--text-secondary);">
+            Standard prompt conventions for terminal coding agents.
+          </p>
+          <div class="agent-path">AGENTS.md</div>
+        </div>
+      </div>
+
+      <!-- Command Output Box for Agent -->
+      <div style="margin-top:2rem; background:#000; border:1px solid var(--border-color); border-radius:var(--radius-md); padding:1.25rem; font-family:var(--font-mono); font-size:0.85rem; color:#38bdf8; display:flex; justify-content:space-between; align-items:center;">
+        <pre id="agent-command-output" style="margin:0;">pixelproof install-skill --agent antigravity
+# Target: ~/.gemini/config/skills/pixelproof/SKILL.md</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLI Command Reference -->
+  <section id="commands" class="section">
+    <div class="container">
+      <div class="section-head">
+        <div class="section-tag">Command Matrix</div>
+        <h2 class="section-title">Built-in CLI Commands</h2>
+        <p class="section-desc">
+          Uniformly available through <code>pixelproof &lt;command&gt;</code> or <code>npx pixelproof-ui &lt;command&gt;</code>.
+        </p>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="cmd-table">
+          <thead>
+            <tr>
+              <th>Command</th>
+              <th>Usage & Flags</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="cmd-code">doctor</td>
+              <td><code>pixelproof doctor [--json]</code></td>
+              <td>Inspects Node >= 20, Python >= 3.12, Pillow, NumPy, and Chromium launchability.</td>
+            </tr>
+            <tr>
+              <td class="cmd-code">install-skill</td>
+              <td><code>pixelproof install-skill [--agent &lt;name&gt;]</code></td>
+              <td>Configures AI agent instructions for Antigravity, Claude, Cursor, Copilot, OpenCode, Codex.</td>
+            </tr>
+            <tr>
+              <td class="cmd-code">init</td>
+              <td><code>pixelproof init [--dir &lt;path&gt;]</code></td>
+              <td>Optional scaffold for starter <code>references.json</code> and configuration.</td>
+            </tr>
+            <tr>
+              <td class="cmd-code">validate</td>
+              <td><code>pixelproof validate --manifest &lt;path&gt;</code></td>
+              <td>Validates manifest schema, viewport bounds, and image readability.</td>
+            </tr>
+            <tr>
+              <td class="cmd-code">inspect</td>
+              <td><code>pixelproof inspect --project &lt;dir&gt;</code></td>
+              <td>Read-only framework and script detector (React, Next.js, Vue, HTML).</td>
+            </tr>
+            <tr>
+              <td class="cmd-code">capture</td>
+              <td><code>pixelproof capture --manifest &lt;path&gt; --out &lt;dir&gt;</code></td>
+              <td>Takes deterministic Playwright screenshots across registered routes.</td>
+            </tr>
+            <tr>
+              <td class="cmd-code">compare</td>
+              <td><code>pixelproof compare --reference &lt;p&gt; --actual &lt;p&gt; --regions</code></td>
+              <td>Computes MAE, differing pixels, and 4×4 regional defect priority scores.</td>
+            </tr>
+            <tr>
+              <td class="cmd-code">iterate</td>
+              <td><code>pixelproof iterate --manifest &lt;p&gt; --actual-dir &lt;d&gt;</code></td>
+              <td>Computes delta comparisons against previous iterations in <code>iterations.json</code>.</td>
+            </tr>
+            <tr>
+              <td class="cmd-code">progress</td>
+              <td><code>pixelproof progress --state &lt;path&gt;</code></td>
+              <td>Detects stalls, regressions, and stop conditions in read-only mode.</td>
+            </tr>
+            <tr>
+              <td class="cmd-code">report</td>
+              <td><code>pixelproof report --summary &lt;path&gt; --out &lt;dir&gt;</code></td>
+              <td>Generates audit-ready Markdown and JSON evidence reports.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Documentation Portal Section -->
+  <section id="docs" class="section" style="background:var(--bg-secondary); border-top:1px solid var(--border-color);">
+    <div class="container">
+      <div class="section-head">
+        <div class="section-tag">Knowledge Base</div>
+        <h2 class="section-title">Official Documentation</h2>
+        <p class="section-desc">
+          Browse the full specifications and architectural guides directly in your browser.
+        </p>
+      </div>
+
+      <div class="docs-portal">
+        <div class="docs-sidebar">
+          <div class="docs-sidebar-title">Topic Navigation</div>
+          <ul class="docs-menu">
+            <li class="docs-menu-item active" data-doc="workflow">8-Step Workflow</li>
+            <li class="docs-menu-item" data-doc="visual-analysis">Visual Analysis & Math</li>
+            <li class="docs-menu-item" data-doc="architecture">Architecture & Separation</li>
+            <li class="docs-menu-item" data-doc="security">Security & Confinement</li>
+            <li class="docs-menu-item" data-doc="benchmarks">Benchmarks & Determinism</li>
+            <li class="docs-menu-item" data-doc="troubleshooting">Troubleshooting & FAQ</li>
+          </ul>
+        </div>
+        <div class="docs-content" id="docs-body">
+          <!-- Populated dynamically by app.js from markdown files -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-links">
+        <a href="https://github.com/ab-pro-dev/PixelProof-Advanced-AI-coding-agent-skill" target="_blank">GitHub Repository</a>
+        <a href="https://www.npmjs.com/package/pixelproof-ui" target="_blank">NPM Package</a>
+        <a href="#docs">Documentation</a>
+        <a href="https://github.com/ab-pro-dev/PixelProof-Advanced-AI-coding-agent-skill/blob/main/LICENSE" target="_blank">MIT License</a>
+      </div>
+      <p>© 2026 ab-pro-dev. Open source under the MIT License.</p>
+    </div>
+  </footer>
+
+  <script src="./app.js"></script>
+</body>
+</html>
