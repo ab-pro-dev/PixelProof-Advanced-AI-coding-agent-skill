@@ -91,16 +91,16 @@
           </div>
         </div>
         <div class="terminal-body">
-          <div class="terminal-code">
+          <div class="terminal-code" id="terminal-code-wrapper" title="Click to copy command">
             <span class="prompt">$</span>
             <span id="terminal-code-text">npm install -g pixelproof-ui</span>
           </div>
-          <button class="copy-btn" id="copy-terminal-btn">
+          <button class="copy-btn" id="copy-terminal-btn" title="Copy to clipboard">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
             </svg>
-            Copy
+            <span>Copy</span>
           </button>
         </div>
       </div>
@@ -388,9 +388,16 @@
       </div>
 
       <!-- Command Output Box for Agent -->
-      <div style="margin-top:2rem; background:#000; border:1px solid var(--border-color); border-radius:var(--radius-md); padding:1.25rem; font-family:var(--font-mono); font-size:0.85rem; color:#38bdf8; display:flex; justify-content:space-between; align-items:center;">
-        <pre id="agent-command-output" style="margin:0;">pixelproof install-skill --agent antigravity
+      <div class="agent-cmd-box" id="agent-cmd-box" title="Click to copy command">
+        <pre id="agent-command-output">pixelproof install-skill --agent antigravity
 # Target: ~/.gemini/config/skills/pixelproof/SKILL.md</pre>
+        <button class="copy-btn" id="copy-agent-btn" title="Copy agent command">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <span>Copy</span>
+        </button>
       </div>
     </div>
   </section>
@@ -402,7 +409,7 @@
         <div class="section-tag">Command Matrix</div>
         <h2 class="section-title">Built-in CLI Commands</h2>
         <p class="section-desc">
-          Uniformly available through <code>pixelproof &lt;command&gt;</code> or <code>npx pixelproof-ui &lt;command&gt;</code>.
+          Uniformly available through <code>pixelproof &lt;command&gt;</code> or <code>npx pixelproof-ui &lt;command&gt;</code>. Click any command to copy.
         </p>
       </div>
 
@@ -418,52 +425,152 @@
           <tbody>
             <tr>
               <td class="cmd-code">doctor</td>
-              <td><code>pixelproof doctor [--json]</code></td>
+              <td>
+                <div class="cmd-copy-cell">
+                  <code>pixelproof doctor [--json]</code>
+                  <button class="table-copy-btn" title="Copy command" data-copy="pixelproof doctor">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                  </button>
+                </div>
+              </td>
               <td>Inspects Node >= 20, Python >= 3.12, Pillow, NumPy, and Chromium launchability.</td>
             </tr>
             <tr>
               <td class="cmd-code">install-skill</td>
-              <td><code>pixelproof install-skill [--agent &lt;name&gt;]</code></td>
+              <td>
+                <div class="cmd-copy-cell">
+                  <code>pixelproof install-skill [--agent &lt;name&gt;]</code>
+                  <button class="table-copy-btn" title="Copy command" data-copy="pixelproof install-skill">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                  </button>
+                </div>
+              </td>
               <td>Configures AI agent instructions for Antigravity, Claude, Cursor, Copilot, OpenCode, Codex.</td>
             </tr>
             <tr>
               <td class="cmd-code">init</td>
-              <td><code>pixelproof init [--dir &lt;path&gt;]</code></td>
+              <td>
+                <div class="cmd-copy-cell">
+                  <code>pixelproof init [--dir &lt;path&gt;]</code>
+                  <button class="table-copy-btn" title="Copy command" data-copy="pixelproof init">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                  </button>
+                </div>
+              </td>
               <td>Optional scaffold for starter <code>references.json</code> and configuration.</td>
             </tr>
             <tr>
               <td class="cmd-code">validate</td>
-              <td><code>pixelproof validate --manifest &lt;path&gt;</code></td>
+              <td>
+                <div class="cmd-copy-cell">
+                  <code>pixelproof validate --manifest &lt;path&gt;</code>
+                  <button class="table-copy-btn" title="Copy command" data-copy="pixelproof validate --manifest references.json">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                  </button>
+                </div>
+              </td>
               <td>Validates manifest schema, viewport bounds, and image readability.</td>
             </tr>
             <tr>
               <td class="cmd-code">inspect</td>
-              <td><code>pixelproof inspect --project &lt;dir&gt;</code></td>
+              <td>
+                <div class="cmd-copy-cell">
+                  <code>pixelproof inspect --project &lt;dir&gt;</code>
+                  <button class="table-copy-btn" title="Copy command" data-copy="pixelproof inspect">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                  </button>
+                </div>
+              </td>
               <td>Read-only framework and script detector (React, Next.js, Vue, HTML).</td>
             </tr>
             <tr>
               <td class="cmd-code">capture</td>
-              <td><code>pixelproof capture --manifest &lt;path&gt; --out &lt;dir&gt;</code></td>
+              <td>
+                <div class="cmd-copy-cell">
+                  <code>pixelproof capture --manifest &lt;path&gt; --out &lt;dir&gt;</code>
+                  <button class="table-copy-btn" title="Copy command" data-copy="pixelproof capture --manifest references.json --out actual">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                  </button>
+                </div>
+              </td>
               <td>Takes deterministic Playwright screenshots across registered routes.</td>
             </tr>
             <tr>
               <td class="cmd-code">compare</td>
-              <td><code>pixelproof compare --reference &lt;p&gt; --actual &lt;p&gt; --regions</code></td>
+              <td>
+                <div class="cmd-copy-cell">
+                  <code>pixelproof compare --reference &lt;p&gt; --actual &lt;p&gt; --regions</code>
+                  <button class="table-copy-btn" title="Copy command" data-copy="pixelproof compare --reference references/home.png --actual actual/home.png --regions">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                  </button>
+                </div>
+              </td>
               <td>Computes MAE, differing pixels, and 4×4 regional defect priority scores.</td>
             </tr>
             <tr>
               <td class="cmd-code">iterate</td>
-              <td><code>pixelproof iterate --manifest &lt;p&gt; --actual-dir &lt;d&gt;</code></td>
+              <td>
+                <div class="cmd-copy-cell">
+                  <code>pixelproof iterate --manifest &lt;p&gt; --actual-dir &lt;d&gt;</code>
+                  <button class="table-copy-btn" title="Copy command" data-copy="pixelproof iterate --manifest references.json --actual-dir actual">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                  </button>
+                </div>
+              </td>
               <td>Computes delta comparisons against previous iterations in <code>iterations.json</code>.</td>
             </tr>
             <tr>
               <td class="cmd-code">progress</td>
-              <td><code>pixelproof progress --state &lt;path&gt;</code></td>
+              <td>
+                <div class="cmd-copy-cell">
+                  <code>pixelproof progress --state &lt;path&gt;</code>
+                  <button class="table-copy-btn" title="Copy command" data-copy="pixelproof progress">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                  </button>
+                </div>
+              </td>
               <td>Detects stalls, regressions, and stop conditions in read-only mode.</td>
             </tr>
             <tr>
               <td class="cmd-code">report</td>
-              <td><code>pixelproof report --summary &lt;path&gt; --out &lt;dir&gt;</code></td>
+              <td>
+                <div class="cmd-copy-cell">
+                  <code>pixelproof report --summary &lt;path&gt; --out &lt;dir&gt;</code>
+                  <button class="table-copy-btn" title="Copy command" data-copy="pixelproof report --summary run_summary.json --out reports">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                  </button>
+                </div>
+              </td>
               <td>Generates audit-ready Markdown and JSON evidence reports.</td>
             </tr>
           </tbody>
@@ -514,6 +621,17 @@
       <p>© 2026 ab-pro-dev. Open source under the MIT License.</p>
     </div>
   </footer>
+
+  <!-- Floating Copy Toast Notification -->
+  <div id="copy-toast" class="copy-toast" role="alert" aria-live="polite">
+    <span class="copy-toast-icon">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+    </span>
+    <span class="copy-toast-text">Copied!</span>
+    <span id="copy-toast-cmd" class="copy-toast-cmd"></span>
+  </div>
 
   <script src="./app.js"></script>
 </body>
