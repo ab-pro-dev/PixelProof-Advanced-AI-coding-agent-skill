@@ -115,7 +115,7 @@ All commands support `--help` for full argument details.
 
 PixelProof includes ready-to-test applications in the `examples/` directory:
 
-- **`examples/auracommerce/`**: Full-scale eCommerce admin dashboard built with Next.js (App Router), Tailwind CSS, Lucide icons, and Recharts. Demonstrates complex multi-page layout reconstruction.
+- **`examples/sample-project/`**: Standard test fixture used by the visual comparison and CLI verification test suites.
 - **`examples/real-app/`**: Minimal Vite + React application with multi-route references.
 - **`examples/nextjs-app/`**: Minimal Next.js application with pinned dependencies and plain CSS.
 - **`examples/vue-app/`**: Minimal Vite + Vue 3 application with route simulation.
